@@ -20,4 +20,4 @@ const BillSchema = new mongoose.Schema({
   grandTotal: { type: Number, required: true }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Bill', BillSchema);
+module.exports = mongoose.models.Bill || mongoose.model('Bill', BillSchema);
