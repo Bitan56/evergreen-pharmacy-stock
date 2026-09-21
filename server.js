@@ -1,4 +1,3 @@
-// Polyfill for Node v18 Web Crypto API compatibility with MongoDB driver v6+
 const crypto = require('crypto');
 if (!globalThis.crypto) globalThis.crypto = crypto;
 
@@ -16,21 +15,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static assets
+// Serve static assets if present in public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Connect database for incoming requests
+// Database connection middleware
 app.use(async (req, res, next) => {
+  // Allow root static page requests to pass through without blocking if DB is cold
+  if (req.path === '/' || req.path === '/index.html') {
+    return next();
+  }
   try {
     await connectDB();
     next();
   } catch (err) {
-    console.error('Database connection error:', err);
-    res.status(500).json({ error: 'Database connection failed', details: err.message });
+    console.error('Database connection error:', err.message);
+    res.status(500).json({ error: 'Database connection failed: ' + err.message });
   }
 });
 
-// Mount APIs
+// API Routes
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/billing', billingRoutes);
 
@@ -47,5 +50,5 @@ module.exports = app;
 
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => console.log(`Pharmacy server live at http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`Pharmacy server live on http://localhost:${PORT}`));
 }
