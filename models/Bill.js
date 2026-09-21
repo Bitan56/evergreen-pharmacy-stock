@@ -15,6 +15,7 @@ const BillSchema = new mongoose.Schema({
   customerPhone: { type: String, default: '' },
   items: [BillItemSchema],
   subtotal: { type: Number, required: true },
+  discount: { type: Number, default: 0 },
   tax: { type: Number, required: true },
   grandTotal: { type: Number, required: true }
 }, { timestamps: true });

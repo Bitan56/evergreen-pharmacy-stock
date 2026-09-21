@@ -11,7 +11,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <style>
-    /* Ensure video stream covers viewport cleanly without scrollbars */
     #camera-viewport video {
       width: 100% !important;
       height: 100% !important;
@@ -22,7 +21,7 @@
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen font-sans pb-20 sm:pb-8">
 
-  <!-- Sticky Header -->
+  <!-- Navigation Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-14 sm:h-16">
       <div class="flex items-center space-x-2.5">
@@ -43,7 +42,7 @@
             <span id="notif-badge" class="hidden absolute top-1 right-1 bg-rose-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
           </button>
 
-          <!-- Dropdown Panel (Responsive) -->
+          <!-- Dropdown Window -->
           <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-72 sm:w-96 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden">
             <div class="p-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
               <span class="font-bold text-xs sm:text-sm text-slate-800">Expiry Notifications</span>
@@ -65,7 +64,7 @@
     </div>
   </header>
 
-  <!-- Global Priority Alert Banner -->
+  <!-- Global High-Priority Alert Banner -->
   <div id="alert-banner" class="hidden bg-rose-50 border-b border-rose-200 text-rose-800 px-3 sm:px-4 py-2.5 text-xs sm:text-sm">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
       <div class="flex items-center gap-1.5 sm:gap-2">
@@ -80,11 +79,10 @@
 
   <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
 
-    <!-- ================= VIEW 1: POS BILLING ================= -->
+    <!-- TAB 1: POS BILLING -->
     <section id="view-pos" class="space-y-4 sm:space-y-6">
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         
-        <!-- Action Title & Camera Trigger -->
         <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Point of Sale</h2>
@@ -96,7 +94,6 @@
           </button>
         </div>
 
-        <!-- Input Fields (Stacked on mobile, 4-col on desktop) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 sm:mb-6">
           <div class="sm:col-span-2">
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Scan / Enter Barcode (Press Enter)</label>
@@ -112,7 +109,7 @@
           </div>
         </div>
 
-        <!-- Desktop Table Cart (Hidden on mobile) -->
+        <!-- Desktop Cart View -->
         <div class="hidden md:block overflow-x-auto border border-slate-100 rounded-lg mb-6">
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
@@ -131,29 +128,63 @@
           </table>
         </div>
 
-        <!-- Mobile Responsive Card Cart (Shown on screens < 768px) -->
+        <!-- Mobile Card View -->
         <div id="cart-mobile-container" class="md:hidden space-y-2.5 mb-6">
           <div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">
             Cart is empty. Scan barcode to add medicine.
           </div>
         </div>
 
-        <!-- Checkout Summary -->
+        <!-- Summary & Discount Calculation -->
         <div class="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-4 pt-4 border-t border-slate-100">
-          <p class="text-[11px] text-slate-400 hidden sm:block max-w-sm">* Expired batches are blocked from dispensing. Quantities deduct from database on sale completion.</p>
-          <div class="w-full md:w-80 space-y-2 bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-lg border md:border-0 border-slate-200">
+          <p class="text-[11px] text-slate-400 hidden sm:block max-w-sm">* Expired batches are blocked. Quantities deduct from database on completed checkout.</p>
+          <div class="w-full md:w-80 space-y-2.5 bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-lg border md:border-0 border-slate-200">
+            
             <div class="flex justify-between text-xs sm:text-sm text-slate-600">
               <span>Subtotal:</span>
               <span id="pos-subtotal" class="font-bold text-slate-800">₹0.00</span>
             </div>
+
+            <!-- Discount Field -->
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm text-slate-600">Discount:</span>
+              <div class="flex items-center gap-1.5 w-44">
+                <input 
+                  type="number" 
+                  id="pos-discount-value" 
+                  value="0" 
+                  min="0" 
+                  step="any" 
+                  oninput="renderCart()" 
+                  class="w-full border border-slate-300 rounded-md px-2 py-1 text-xs text-right focus:ring-1 focus:ring-emerald-500" 
+                  placeholder="0"
+                />
+                <select 
+                  id="pos-discount-type" 
+                  onchange="renderCart()" 
+                  class="border border-slate-300 rounded-md px-1.5 py-1 text-xs bg-white text-slate-700 focus:ring-1 focus:ring-emerald-500"
+                >
+                  <option value="flat">₹</option>
+                  <option value="percent">%</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="flex justify-between text-xs sm:text-sm text-rose-600 font-medium">
+              <span>Discount Applied:</span>
+              <span id="pos-discount-display">-₹0.00</span>
+            </div>
+
             <div class="flex justify-between text-xs sm:text-sm text-slate-600">
               <span>GST (5%):</span>
               <span id="pos-tax" class="font-bold text-slate-800">₹0.00</span>
             </div>
+
             <div class="flex justify-between text-base sm:text-lg font-black text-slate-900 border-t border-slate-200 pt-1.5">
               <span>Grand Total:</span>
               <span id="pos-grand-total" class="text-emerald-600">₹0.00</span>
             </div>
+
             <button onclick="handleCheckout()" id="checkout-btn" disabled class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:bg-slate-300 disabled:cursor-not-allowed text-white py-3 rounded-lg text-sm font-bold transition shadow-sm">
               Complete Sale & Print PDF
             </button>
@@ -162,9 +193,8 @@
       </div>
     </section>
 
-    <!-- ================= VIEW 2: INVENTORY ================= -->
+    <!-- TAB 2: INVENTORY -->
     <section id="view-inventory" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Add/Restock Form -->
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
           <h2 class="text-base sm:text-lg font-bold text-slate-800">Add / Restock</h2>
@@ -213,7 +243,6 @@
         </form>
       </div>
 
-      <!-- Current Inventory Stock -->
       <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
           <div>
@@ -223,7 +252,6 @@
           <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search name or barcode..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
         </div>
 
-        <!-- Desktop Inventory Table -->
         <div class="hidden sm:block overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
@@ -242,19 +270,17 @@
           </table>
         </div>
 
-        <!-- Mobile Inventory Cards (Shown on mobile < 640px) -->
         <div id="inventory-mobile-container" class="sm:hidden space-y-2.5">
           <div class="p-6 text-center text-slate-400 text-xs">Loading stock...</div>
         </div>
       </div>
     </section>
 
-    <!-- ================= VIEW 3: INVOICES ================= -->
+    <!-- TAB 3: INVOICES -->
     <section id="view-bills" class="hidden bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
       <h2 class="text-base sm:text-lg font-bold text-slate-800 mb-1">Invoice Archive</h2>
       <p class="text-[11px] sm:text-xs text-slate-500 mb-4">Past customer invoices recorded in database</p>
 
-      <!-- Desktop Table -->
       <div class="hidden sm:block overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
@@ -273,14 +299,13 @@
         </table>
       </div>
 
-      <!-- Mobile Invoices Cards -->
       <div id="bills-mobile-container" class="sm:hidden space-y-2.5">
         <div class="p-6 text-center text-slate-400 text-xs">Loading bills...</div>
       </div>
     </section>
   </main>
 
-  <!-- Mobile Bottom Tab Navigation Bar (Fixed for Smartphones) -->
+  <!-- Mobile Bottom Tab Navigation -->
   <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center z-40 shadow-lg">
     <button id="mobile-nav-pos" onclick="switchTab('pos')" class="flex flex-col items-center text-emerald-600 font-bold text-[11px]">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -296,17 +321,15 @@
     </button>
   </div>
 
-  <!-- Camera Scanner Modal (Optimized for Mobile Screens) -->
+  <!-- Camera Scanner Modal -->
   <div id="scanner-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div class="bg-white rounded-xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 shadow-2xl relative">
       <div class="flex justify-between items-center mb-3">
         <h3 class="font-bold text-sm sm:text-base text-slate-800">Scan Barcode / QR</h3>
         <button onclick="stopCameraScanner()" class="text-slate-400 hover:text-slate-600 p-1 text-2xl font-bold leading-none">&times;</button>
       </div>
-      
       <div id="camera-viewport" class="w-full bg-black rounded-lg overflow-hidden relative aspect-square sm:aspect-video flex items-center justify-center"></div>
-
-      <p id="scanner-status" class="text-[11px] sm:text-xs text-center text-slate-500 mt-3">Align barcode within the target frame.</p>
+      <p id="scanner-status" class="text-[11px] sm:text-xs text-center text-slate-500 mt-3">Align barcode within the camera view.</p>
     </div>
   </div>
 
@@ -404,25 +427,19 @@
       document.getElementById('view-inventory').classList.toggle('hidden', tab !== 'inventory');
       document.getElementById('view-bills').classList.toggle('hidden', tab !== 'bills');
 
-      // Desktop Tab styling
       ['pos', 'inventory', 'bills'].forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         if (btn) {
-          if (t === tab) {
-            btn.className = 'px-3.5 py-1.5 text-xs font-bold rounded-md bg-white text-emerald-700 shadow-sm transition';
-          } else {
-            btn.className = 'px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
-          }
+          btn.className = (t === tab)
+            ? 'px-3.5 py-1.5 text-xs font-bold rounded-md bg-white text-emerald-700 shadow-sm transition'
+            : 'px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
         }
 
-        // Mobile Bottom Tab styling
         const mBtn = document.getElementById(`mobile-nav-${t}`);
         if (mBtn) {
-          if (t === tab) {
-            mBtn.className = 'flex flex-col items-center text-emerald-600 font-bold text-[11px]';
-          } else {
-            mBtn.className = 'flex flex-col items-center text-slate-500 hover:text-slate-900 font-semibold text-[11px]';
-          }
+          mBtn.className = (t === tab)
+            ? 'flex flex-col items-center text-emerald-600 font-bold text-[11px]'
+            : 'flex flex-col items-center text-slate-500 hover:text-slate-900 font-semibold text-[11px]';
         }
       });
 
@@ -430,7 +447,7 @@
       if (tab === 'bills') fetchBills();
     }
 
-    // BADGE CALCULATION
+    // EXPIRY STATUS BADGE
     function getExpiryBadge(dateStr) {
       const diffDays = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
       if (diffDays < 0) {
@@ -516,7 +533,7 @@
       } catch(e) {}
     }
 
-    // HARDWARE SCANNER LISTENER
+    // GLOBAL USB SCANNER INTERCEPTOR
     let barcodeBuffer = '';
     let lastKeyTime = Date.now();
 
@@ -597,7 +614,7 @@
         }
         renderCart();
       } catch (err) {
-        alert('Lookup error. Check connection.');
+        alert('Lookup error. Check server connection.');
       }
     }
 
@@ -626,7 +643,14 @@
       renderCart();
     }
 
-    // Dual Render: Desktop Table & Mobile Cards
+    function calculateDiscountAmount(subtotal) {
+      const val = parseFloat(document.getElementById('pos-discount-value')?.value) || 0;
+      const type = document.getElementById('pos-discount-type')?.value || 'flat';
+
+      let amount = (type === 'percent') ? (subtotal * val) / 100 : val;
+      return Math.min(Math.max(0, amount), subtotal);
+    }
+
     function renderCart() {
       const tbody = document.getElementById('cart-table-body');
       const mobileList = document.getElementById('cart-mobile-container');
@@ -635,13 +659,14 @@
         tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode to add medicine.</td></tr>';
         mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">Cart is empty. Scan barcode to add medicine.</div>';
         document.getElementById('pos-subtotal').innerText = '₹0.00';
+        document.getElementById('pos-discount-display').innerText = '-₹0.00';
         document.getElementById('pos-tax').innerText = '₹0.00';
         document.getElementById('pos-grand-total').innerText = '₹0.00';
         document.getElementById('checkout-btn').disabled = true;
         return;
       }
 
-      // Desktop Table Rows
+      // Render Desktop Rows
       tbody.innerHTML = cart.map(item => `
         <tr class="hover:bg-slate-50">
           <td class="p-3 font-semibold text-slate-800">${item.name}</td>
@@ -658,7 +683,7 @@
         </tr>
       `).join('');
 
-      // Mobile Card Rows
+      // Render Mobile Cards
       mobileList.innerHTML = cart.map(item => `
         <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex justify-between items-center gap-2">
           <div class="flex-1 min-w-0">
@@ -676,10 +701,13 @@
       `).join('');
 
       const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-      const tax = Number((subtotal * 0.05).toFixed(2));
-      const grandTotal = Number((subtotal + tax).toFixed(2));
+      const discountAmount = calculateDiscountAmount(subtotal);
+      const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+      const tax = Number((discountedSubtotal * 0.05).toFixed(2));
+      const grandTotal = Number((discountedSubtotal + tax).toFixed(2));
 
       document.getElementById('pos-subtotal').innerText = `₹${subtotal.toFixed(2)}`;
+      document.getElementById('pos-discount-display').innerText = `-₹${discountAmount.toFixed(2)}`;
       document.getElementById('pos-tax').innerText = `₹${tax.toFixed(2)}`;
       document.getElementById('pos-grand-total').innerText = `₹${grandTotal.toFixed(2)}`;
       document.getElementById('checkout-btn').disabled = false;
@@ -689,14 +717,17 @@
       if (cart.length === 0) return;
 
       const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-      const tax = Number((subtotal * 0.05).toFixed(2));
-      const grandTotal = Number((subtotal + tax).toFixed(2));
+      const discountAmount = calculateDiscountAmount(subtotal);
+      const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+      const tax = Number((discountedSubtotal * 0.05).toFixed(2));
+      const grandTotal = Number((discountedSubtotal + tax).toFixed(2));
 
       const payload = {
         customerName: document.getElementById('pos-cust-name').value.trim() || 'Walk-in Customer',
         customerPhone: document.getElementById('pos-cust-phone').value.trim(),
         items: cart,
         subtotal,
+        discount: Number(discountAmount.toFixed(2)),
         tax,
         grandTotal
       };
@@ -720,6 +751,7 @@
         cart = [];
         document.getElementById('pos-cust-name').value = '';
         document.getElementById('pos-cust-phone').value = '';
+        document.getElementById('pos-discount-value').value = '0';
         renderCart();
         checkExpiryNotifications();
       } catch (err) {
@@ -727,7 +759,7 @@
       }
     }
 
-    // PDF INVOICE GENERATION
+    // PDF GENERATOR
     function generatePdf(billData) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -777,16 +809,30 @@
       });
 
       const finalY = doc.lastAutoTable.finalY + 20;
+
+      doc.setFontSize(10);
+      doc.setTextColor(80);
       doc.text('Subtotal:', 380, finalY);
       doc.text(`₹${Number(billData.subtotal).toFixed(2)}`, 530, finalY, { align: 'right' });
-      doc.text('GST (5%):', 380, finalY + 16);
-      doc.text(`₹${Number(billData.tax).toFixed(2)}`, 530, finalY + 16, { align: 'right' });
+
+      let offset = 16;
+      if (billData.discount && billData.discount > 0) {
+        doc.setTextColor(220, 38, 38);
+        doc.text('Discount:', 380, finalY + offset);
+        doc.text(`-₹${Number(billData.discount).toFixed(2)}`, 530, finalY + offset, { align: 'right' });
+        offset += 16;
+      }
+
+      doc.setTextColor(80);
+      doc.text('GST (5%):', 380, finalY + offset);
+      doc.text(`₹${Number(billData.tax).toFixed(2)}`, 530, finalY + offset, { align: 'right' });
+      offset += 20;
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
-      doc.text('Grand Total:', 380, finalY + 36);
-      doc.text(`₹${Number(billData.grandTotal).toFixed(2)}`, 530, finalY + 36, { align: 'right' });
+      doc.text('Grand Total:', 380, finalY + offset);
+      doc.text(`₹${Number(billData.grandTotal).toFixed(2)}`, 530, finalY + offset, { align: 'right' });
 
       doc.save(`${billData.invoiceNumber}.pdf`);
     }
@@ -816,7 +862,6 @@
         return;
       }
 
-      // Desktop Table
       tbody.innerHTML = filtered.map(item => `
         <tr class="hover:bg-slate-50">
           <td class="p-3">
@@ -833,7 +878,6 @@
         </tr>
       `).join('');
 
-      // Mobile Cards
       mobileList.innerHTML = filtered.map(item => `
         <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
           <div class="flex justify-between items-start">
@@ -963,7 +1007,7 @@
       }
     }
 
-    // Initialize on load
+    // Initial load
     fetchInventory();
   </script>
 </body>

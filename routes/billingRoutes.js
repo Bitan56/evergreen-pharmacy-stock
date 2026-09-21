@@ -13,40 +13,37 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Process a POS checkout & deduct stock atomically
+// Checkout transaction with atomic stock decrement
 router.post('/checkout', async (req, res) => {
-  const { customerName, customerPhone, items, subtotal, tax, grandTotal } = req.body;
+  const { customerName, customerPhone, items, subtotal, discount, tax, grandTotal } = req.body;
 
   if (!items || !items.length) {
     return res.status(400).json({ error: 'Cart is empty.' });
   }
 
   try {
-    // 1. Validate stock availability and verify item expiration
     const now = new Date();
+
+    // 1. Validate stocks and verify no item is expired
     for (const item of items) {
       const med = await Medicine.findById(item.medicineId);
-      if (!med) {
-        return res.status(404).json({ error: `Product ${item.name} does not exist.` });
-      }
+      if (!med) return res.status(404).json({ error: `Product ${item.name} not found.` });
       if (new Date(med.expiryDate) < now) {
-        return res.status(400).json({ error: `Cannot sell ${med.name}; batch has expired.` });
+        return res.status(400).json({ error: `Cannot sell ${med.name}; batch expired.` });
       }
       if (med.quantity < item.quantity) {
-        return res.status(400).json({
-          error: `Insufficient stock for ${med.name}. Available: ${med.quantity}, Requested: ${item.quantity}`
-        });
+        return res.status(400).json({ error: `Insufficient stock for ${med.name}. Stock: ${med.quantity}` });
       }
     }
 
-    // 2. Atomically deduct quantities
+    // 2. Deduct inventory quantities
     for (const item of items) {
       await Medicine.findByIdAndUpdate(item.medicineId, {
         $inc: { quantity: -item.quantity }
       });
     }
 
-    // 3. Create invoice
+    // 3. Create invoice document
     const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
     const bill = new Bill({
       invoiceNumber,
@@ -54,6 +51,7 @@ router.post('/checkout', async (req, res) => {
       customerPhone: customerPhone ? customerPhone.trim() : '',
       items,
       subtotal: Number(subtotal),
+      discount: Number(discount) || 0,
       tax: Number(tax),
       grandTotal: Number(grandTotal)
     });
