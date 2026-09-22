@@ -59,6 +59,7 @@
           <button id="tab-btn-pos" onclick="switchTab('pos')" class="px-3.5 py-1.5 text-xs font-bold rounded-md bg-white text-emerald-700 shadow-sm transition">POS</button>
           <button id="tab-btn-inventory" onclick="switchTab('inventory')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Inventory</button>
           <button id="tab-btn-bills" onclick="switchTab('bills')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Invoices</button>
+          <button id="tab-btn-customers" onclick="switchTab('customers')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Customers & Dues</button>
         </nav>
       </div>
     </div>
@@ -79,14 +80,14 @@
 
   <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
 
-    <!-- TAB 1: POS BILLING -->
+    <!-- ================= TAB 1: POS BILLING ================= -->
     <section id="view-pos" class="space-y-4 sm:space-y-6">
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         
         <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Point of Sale</h2>
-            <p class="text-[11px] sm:text-xs text-slate-500">Scan or search medicines</p>
+            <p class="text-[11px] sm:text-xs text-slate-500">Scan barcodes via scanner gun or device camera</p>
           </div>
           <button onclick="startCameraScanner('pos')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" /></svg>
@@ -95,18 +96,36 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 sm:mb-6">
+          <!-- Barcode Input -->
           <div class="sm:col-span-2">
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Scan / Enter Barcode (Press Enter)</label>
             <input type="text" id="pos-barcode-input" placeholder="Scan barcode or type code + Enter..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
           </div>
+
+          <!-- Customer Phone & Auto-Lookup -->
+          <div class="relative">
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Customer Mobile</label>
+            <input type="tel" id="pos-cust-phone" oninput="handlePhoneInput(this.value)" placeholder="10-digit mobile number" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
+            
+            <!-- Suggestion popup when existing user matches -->
+            <div id="phone-suggestions" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto"></div>
+          </div>
+
+          <!-- Customer Name -->
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
             <input type="text" id="pos-cust-name" placeholder="Walk-in Customer" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
           </div>
+        </div>
+
+        <!-- Previous Due Banner for Customer -->
+        <div id="pos-due-alert" class="hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs flex justify-between items-center text-amber-900">
           <div>
-            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Customer Phone</label>
-            <input type="tel" id="pos-cust-phone" placeholder="Phone Number" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <span class="font-bold">Existing Outstanding Balance:</span>
+            <span id="pos-due-alert-amount" class="font-bold text-amber-700 ml-1">₹0.00</span>
+            <span class="text-[10px] text-amber-600 ml-2">(Automatically added to Total Payable)</span>
           </div>
+          <button onclick="clearCustomerDueSelection()" class="text-amber-700 hover:text-amber-900 font-bold text-xs underline">Remove Due</button>
         </div>
 
         <!-- Desktop Cart Table -->
@@ -116,6 +135,7 @@
               <tr>
                 <th class="p-3">Medicine</th>
                 <th class="p-3">Batch</th>
+                <th class="p-3">Exp Date</th>
                 <th class="p-3">Unit Price</th>
                 <th class="p-3 text-center">Qty</th>
                 <th class="p-3 text-right">Total</th>
@@ -123,7 +143,7 @@
               </tr>
             </thead>
             <tbody id="cart-table-body" class="divide-y divide-slate-100">
-              <tr><td colspan="6" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode to add medicine.</td></tr>
+              <tr><td colspan="7" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode to add medicine.</td></tr>
             </tbody>
           </table>
         </div>
@@ -135,13 +155,16 @@
           </div>
         </div>
 
-        <!-- Summary & Discount Calculation -->
+        <!-- Summary, Dues & Payment Section -->
         <div class="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-4 pt-4 border-t border-slate-100">
-          <p class="text-[11px] text-slate-400 hidden sm:block max-w-sm">* Expired batches are blocked. Quantities deduct from database on completed checkout.</p>
-          <div class="w-full md:w-80 space-y-2.5 bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-lg border md:border-0 border-slate-200">
+          <p class="text-[11px] text-slate-400 hidden sm:block max-w-sm">
+            * Expired batches are blocked. Completed bills automatically update inventory and customer ledger records.
+          </p>
+          
+          <div class="w-full md:w-88 space-y-2.5 bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-lg border md:border-0 border-slate-200">
             
             <div class="flex justify-between text-xs sm:text-sm text-slate-600">
-              <span>Subtotal:</span>
+              <span>Items Subtotal:</span>
               <span id="pos-subtotal" class="font-bold text-slate-800">₹0.00</span>
             </div>
 
@@ -180,9 +203,35 @@
               <span id="pos-tax" class="font-bold text-slate-800">₹0.00</span>
             </div>
 
+            <!-- Previous Dues Row -->
+            <div class="flex justify-between text-xs sm:text-sm text-amber-800 font-medium">
+              <span>Previous Outstanding Due:</span>
+              <span id="pos-prev-due">+₹0.00</span>
+            </div>
+
+            <!-- Grand Total -->
             <div class="flex justify-between text-base sm:text-lg font-black text-slate-900 border-t border-slate-200 pt-1.5">
-              <span>Grand Total:</span>
+              <span>Total Payable:</span>
               <span id="pos-grand-total" class="text-emerald-600">₹0.00</span>
+            </div>
+
+            <!-- Amount Paid vs Pending Dues -->
+            <div class="pt-2 border-t border-dashed border-slate-200 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-semibold text-slate-700">Amount Paid (₹):</span>
+                <input 
+                  type="number" 
+                  id="pos-amount-paid" 
+                  oninput="calculateDueBalance()" 
+                  placeholder="Full Amount" 
+                  class="w-32 border border-slate-300 rounded-md px-2 py-1 text-xs text-right font-bold text-slate-900 focus:ring-1 focus:ring-emerald-500" 
+                />
+              </div>
+
+              <div class="flex justify-between text-xs font-bold text-rose-700">
+                <span>Remaining Due:</span>
+                <span id="pos-remaining-due">₹0.00</span>
+              </div>
             </div>
 
             <button onclick="handleCheckout()" id="checkout-btn" disabled class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:bg-slate-300 disabled:cursor-not-allowed text-white py-3 rounded-lg text-sm font-bold transition shadow-sm">
@@ -193,7 +242,7 @@
       </div>
     </section>
 
-    <!-- TAB 2: INVENTORY -->
+    <!-- ================= TAB 2: INVENTORY ================= -->
     <section id="view-inventory" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
@@ -276,7 +325,7 @@
       </div>
     </section>
 
-    <!-- TAB 3: INVOICES -->
+    <!-- ================= TAB 3: INVOICES ================= -->
     <section id="view-bills" class="hidden bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
       <h2 class="text-base sm:text-lg font-bold text-slate-800 mb-1">Invoice Archive</h2>
       <p class="text-[11px] sm:text-xs text-slate-500 mb-4">Past customer invoices recorded in database</p>
@@ -290,11 +339,12 @@
               <th class="p-3">Customer</th>
               <th class="p-3">Items</th>
               <th class="p-3 text-right">Grand Total</th>
+              <th class="p-3 text-right">Remaining Due</th>
               <th class="p-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody id="bills-table-body" class="divide-y divide-slate-100">
-            <tr><td colspan="6" class="p-6 text-center text-slate-400">Loading bills...</td></tr>
+            <tr><td colspan="7" class="p-6 text-center text-slate-400">Loading bills...</td></tr>
           </tbody>
         </table>
       </div>
@@ -303,21 +353,53 @@
         <div class="p-6 text-center text-slate-400 text-xs">Loading bills...</div>
       </div>
     </section>
+
+    <!-- ================= TAB 4: CUSTOMERS & DUES ================= -->
+    <section id="view-customers" class="hidden bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">Customer Directory & Dues</h2>
+          <p class="text-[11px] sm:text-xs text-slate-500">Track customers and settle outstanding balances</p>
+        </div>
+        <input type="text" id="customer-search" oninput="renderCustomers()" placeholder="Search name or mobile..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
+            <tr>
+              <th class="p-3">Customer</th>
+              <th class="p-3">Phone Number</th>
+              <th class="p-3 text-right">Total Outstanding Due</th>
+              <th class="p-3 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="customers-table-body" class="divide-y divide-slate-100">
+            <tr><td colspan="4" class="p-6 text-center text-slate-400">Loading customers...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 
   <!-- Mobile Bottom Tab Navigation -->
-  <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center z-40 shadow-lg">
-    <button id="mobile-nav-pos" onclick="switchTab('pos')" class="flex flex-col items-center text-emerald-600 font-bold text-[11px]">
+  <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around items-center z-40 shadow-lg">
+    <button id="mobile-nav-pos" onclick="switchTab('pos')" class="flex flex-col items-center text-emerald-600 font-bold text-[10px]">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-      POS Counter
+      POS
     </button>
-    <button id="mobile-nav-inventory" onclick="switchTab('inventory')" class="flex flex-col items-center text-slate-500 hover:text-slate-900 font-semibold text-[11px]">
+    <button id="mobile-nav-inventory" onclick="switchTab('inventory')" class="flex flex-col items-center text-slate-500 font-semibold text-[10px]">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-      Inventory
+      Stock
     </button>
-    <button id="mobile-nav-bills" onclick="switchTab('bills')" class="flex flex-col items-center text-slate-500 hover:text-slate-900 font-semibold text-[11px]">
+    <button id="mobile-nav-bills" onclick="switchTab('bills')" class="flex flex-col items-center text-slate-500 font-semibold text-[10px]">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
       Invoices
+    </button>
+    <button id="mobile-nav-customers" onclick="switchTab('customers')" class="flex flex-col items-center text-slate-500 font-semibold text-[10px]">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      Customers
     </button>
   </div>
 
@@ -338,9 +420,11 @@
 
     let inventory = [];
     let bills = [];
+    let customers = [];
     let cart = [];
     let qrEngine = null;
     let activeScanTarget = 'pos';
+    let currentCustomerDue = 0;
 
     // NOTIFICATIONS
     function toggleNotifications() {
@@ -365,7 +449,6 @@
         const banner = document.getElementById('alert-banner');
         const bannerText = document.getElementById('alert-banner-text');
 
-        // Safe array check
         const expiringItems = Array.isArray(data) ? data : [];
 
         if (expiringItems.length === 0) {
@@ -429,8 +512,9 @@
       document.getElementById('view-pos').classList.toggle('hidden', tab !== 'pos');
       document.getElementById('view-inventory').classList.toggle('hidden', tab !== 'inventory');
       document.getElementById('view-bills').classList.toggle('hidden', tab !== 'bills');
+      document.getElementById('view-customers').classList.toggle('hidden', tab !== 'customers');
 
-      ['pos', 'inventory', 'bills'].forEach(t => {
+      ['pos', 'inventory', 'bills', 'customers'].forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         if (btn) {
           btn.className = (t === tab)
@@ -441,13 +525,83 @@
         const mBtn = document.getElementById(`mobile-nav-${t}`);
         if (mBtn) {
           mBtn.className = (t === tab)
-            ? 'flex flex-col items-center text-emerald-600 font-bold text-[11px]'
-            : 'flex flex-col items-center text-slate-500 hover:text-slate-900 font-semibold text-[11px]';
+            ? 'flex flex-col items-center text-emerald-600 font-bold text-[10px]'
+            : 'flex flex-col items-center text-slate-500 font-semibold text-[10px]';
         }
       });
 
       if (tab === 'inventory') fetchInventory();
       if (tab === 'bills') fetchBills();
+      if (tab === 'customers') fetchCustomers();
+    }
+
+    // CUSTOMER AUTO-LOOKUP & DUES
+    let lookupTimer = null;
+    function handlePhoneInput(phone) {
+      clearTimeout(lookupTimer);
+      const suggestionsDiv = document.getElementById('phone-suggestions');
+      const clean = phone.trim();
+
+      if (clean.length < 3) {
+        suggestionsDiv.classList.add('hidden');
+        return;
+      }
+
+      lookupTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`${API_BASE}/customers/lookup/${encodeURIComponent(clean)}`);
+          const matches = await res.json();
+
+          if (!Array.isArray(matches) || matches.length === 0) {
+            suggestionsDiv.classList.add('hidden');
+            return;
+          }
+
+          suggestionsDiv.innerHTML = matches.map(m => `
+            <div onclick='selectCustomer(${JSON.stringify(m)})' class="p-2.5 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0 flex justify-between items-center text-xs">
+              <div>
+                <p class="font-bold text-slate-800">${m.name}</p>
+                <p class="text-[10px] text-slate-500 font-mono">${m.phone}</p>
+              </div>
+              <span class="text-xs font-bold ${m.totalDue > 0 ? 'text-amber-700 bg-amber-50 px-2 py-0.5 rounded' : 'text-emerald-700'}">
+                ${m.totalDue > 0 ? 'Due: ₹' + m.totalDue.toFixed(2) : 'No Due'}
+              </span>
+            </div>
+          `).join('');
+
+          suggestionsDiv.classList.remove('hidden');
+        } catch (err) {
+          console.error(err);
+        }
+      }, 200);
+    }
+
+    function selectCustomer(cust) {
+      document.getElementById('pos-cust-phone').value = cust.phone;
+      document.getElementById('pos-cust-name').value = cust.name;
+      document.getElementById('phone-suggestions').classList.add('hidden');
+
+      currentCustomerDue = cust.totalDue || 0;
+      updateDueAlert();
+      renderCart();
+    }
+
+    function updateDueAlert() {
+      const alertBox = document.getElementById('pos-due-alert');
+      const alertAmount = document.getElementById('pos-due-alert-amount');
+
+      if (currentCustomerDue > 0) {
+        alertBox.classList.remove('hidden');
+        alertAmount.innerText = `₹${currentCustomerDue.toFixed(2)}`;
+      } else {
+        alertBox.classList.add('hidden');
+      }
+    }
+
+    function clearCustomerDueSelection() {
+      currentCustomerDue = 0;
+      updateDueAlert();
+      renderCart();
     }
 
     // EXPIRY STATUS BADGE
@@ -541,7 +695,7 @@
     let lastKeyTime = Date.now();
 
     window.addEventListener('keydown', (e) => {
-      if (['pos-cust-name', 'pos-cust-phone', 'form-name', 'form-generic', 'form-batch', 'form-rack', 'inventory-search'].includes(e.target.id)) {
+      if (['pos-cust-name', 'pos-cust-phone', 'pos-amount-paid', 'form-name', 'form-generic', 'form-batch', 'form-rack', 'inventory-search', 'customer-search'].includes(e.target.id)) {
         return;
       }
 
@@ -596,6 +750,10 @@
           return;
         }
 
+        const expFormatted = med.expiryDate 
+          ? new Date(med.expiryDate).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) 
+          : 'N/A';
+
         const existing = cart.find(i => i.medicineId === med._id);
         if (existing) {
           if (existing.quantity + 1 > med.quantity) {
@@ -609,6 +767,7 @@
             medicineId: med._id,
             name: med.name,
             batchNumber: med.batchNumber,
+            expiryDate: expFormatted,
             unitPrice: med.price,
             quantity: 1,
             maxStock: med.quantity,
@@ -654,26 +813,40 @@
       return Math.min(Math.max(0, amount), subtotal);
     }
 
+    function calculateDueBalance() {
+      const grandTotalStr = document.getElementById('pos-grand-total').innerText.replace('₹', '');
+      const grandTotal = parseFloat(grandTotalStr) || 0;
+      
+      const paidInput = document.getElementById('pos-amount-paid').value;
+      const paid = paidInput === '' ? grandTotal : parseFloat(paidInput) || 0;
+
+      const remaining = Math.max(0, grandTotal - paid);
+      document.getElementById('pos-remaining-due').innerText = `₹${remaining.toFixed(2)}`;
+    }
+
     function renderCart() {
       const tbody = document.getElementById('cart-table-body');
       const mobileList = document.getElementById('cart-mobile-container');
 
       if (cart.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode to add medicine.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode to add medicine.</td></tr>';
         mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">Cart is empty. Scan barcode to add medicine.</div>';
         document.getElementById('pos-subtotal').innerText = '₹0.00';
         document.getElementById('pos-discount-display').innerText = '-₹0.00';
         document.getElementById('pos-tax').innerText = '₹0.00';
+        document.getElementById('pos-prev-due').innerText = '+₹0.00';
         document.getElementById('pos-grand-total').innerText = '₹0.00';
+        document.getElementById('pos-amount-paid').value = '';
+        document.getElementById('pos-remaining-due').innerText = '₹0.00';
         document.getElementById('checkout-btn').disabled = true;
         return;
       }
 
-      // Desktop Rows
       tbody.innerHTML = cart.map(item => `
         <tr class="hover:bg-slate-50">
           <td class="p-3 font-semibold text-slate-800">${item.name}</td>
           <td class="p-3 text-slate-500 font-mono text-xs">${item.batchNumber}</td>
+          <td class="p-3 text-amber-700 font-bold text-xs">${item.expiryDate}</td>
           <td class="p-3 text-slate-700">₹${item.unitPrice.toFixed(2)}</td>
           <td class="p-3 text-center">
             <input type="number" min="1" max="${item.maxStock}" value="${item.quantity}" onchange="updateCartQuantity('${item.medicineId}', this.value)" class="w-16 border border-slate-300 rounded px-2 py-1 text-center font-bold" />
@@ -686,12 +859,11 @@
         </tr>
       `).join('');
 
-      // Mobile Cards
       mobileList.innerHTML = cart.map(item => `
         <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex justify-between items-center gap-2">
           <div class="flex-1 min-w-0">
             <h4 class="font-bold text-xs text-slate-800 truncate">${item.name}</h4>
-            <p class="text-[10px] text-slate-500 font-mono">B: ${item.batchNumber} | ₹${item.unitPrice.toFixed(2)}</p>
+            <p class="text-[10px] text-slate-500 font-mono">B: ${item.batchNumber} | Exp: ${item.expiryDate} | ₹${item.unitPrice.toFixed(2)}</p>
             <p class="text-xs font-bold text-emerald-700 mt-1">₹${item.total.toFixed(2)}</p>
           </div>
           <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -707,12 +879,16 @@
       const discountAmount = calculateDiscountAmount(subtotal);
       const discountedSubtotal = Math.max(0, subtotal - discountAmount);
       const tax = Number((discountedSubtotal * 0.05).toFixed(2));
-      const grandTotal = Number((discountedSubtotal + tax).toFixed(2));
+      
+      const grandTotal = Number((discountedSubtotal + tax + currentCustomerDue).toFixed(2));
 
       document.getElementById('pos-subtotal').innerText = `₹${subtotal.toFixed(2)}`;
       document.getElementById('pos-discount-display').innerText = `-₹${discountAmount.toFixed(2)}`;
       document.getElementById('pos-tax').innerText = `₹${tax.toFixed(2)}`;
+      document.getElementById('pos-prev-due').innerText = `+₹${currentCustomerDue.toFixed(2)}`;
       document.getElementById('pos-grand-total').innerText = `₹${grandTotal.toFixed(2)}`;
+      
+      calculateDueBalance();
       document.getElementById('checkout-btn').disabled = false;
     }
 
@@ -723,7 +899,11 @@
       const discountAmount = calculateDiscountAmount(subtotal);
       const discountedSubtotal = Math.max(0, subtotal - discountAmount);
       const tax = Number((discountedSubtotal * 0.05).toFixed(2));
-      const grandTotal = Number((discountedSubtotal + tax).toFixed(2));
+      const grandTotal = Number((discountedSubtotal + tax + currentCustomerDue).toFixed(2));
+
+      const paidInput = document.getElementById('pos-amount-paid').value;
+      const amountPaid = paidInput === '' ? grandTotal : Math.max(0, parseFloat(paidInput) || 0);
+      const remainingDue = Math.max(0, Number((grandTotal - amountPaid).toFixed(2)));
 
       const payload = {
         customerName: document.getElementById('pos-cust-name').value.trim() || 'Walk-in Customer',
@@ -732,7 +912,10 @@
         subtotal,
         discount: Number(discountAmount.toFixed(2)),
         tax,
-        grandTotal
+        previousDue: currentCustomerDue,
+        grandTotal,
+        amountPaid,
+        remainingDue
       };
 
       try {
@@ -752,109 +935,247 @@
         generatePdf(bill);
 
         cart = [];
+        currentCustomerDue = 0;
+        updateDueAlert();
         document.getElementById('pos-cust-name').value = '';
         document.getElementById('pos-cust-phone').value = '';
         document.getElementById('pos-discount-value').value = '0';
+        document.getElementById('pos-amount-paid').value = '';
         renderCart();
         checkExpiryNotifications();
+        alert(`Sale completed! Invoice ${bill.invoiceNumber} downloaded.`);
       } catch (err) {
         alert('Server network error during checkout.');
       }
     }
 
-    // PDF GENERATOR
+    // PDF INVOICE
     function generatePdf(billData) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
 
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      doc.setFillColor(5, 150, 105);
+      doc.rect(0, 0, pageWidth, 8, 'F');
+
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      doc.text('PHARMACARE DISPENSARY', 40, 50);
+      doc.setFontSize(20);
+      doc.setTextColor(15, 23, 42);
+      doc.text('EVERGREEN PHARMACY', 40, 48);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text('123 Healthcare Avenue, City Center', 40, 65);
-      doc.text('Phone: +91 98765 43210 | GSTIN/DL: 19ABCDE1234F1Z5', 40, 77);
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Retail Drug License No: DL-2024-WB-89210 | GSTIN: 19ABCDE1234F1Z5', 40, 62);
+      doc.text('124 Medical Campus Road, City Center, PIN: 700001 | Ph: +91 98765 43210', 40, 74);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(5, 150, 105);
+      doc.text('TAX INVOICE / CASH MEMO', pageWidth - 40, 48, { align: 'right' });
 
       doc.setDrawColor(226, 232, 240);
-      doc.line(40, 88, 555, 88);
+      doc.setLineWidth(1);
+      doc.line(40, 86, pageWidth - 40, 86);
 
+      const boxY = 96;
+      const boxHeight = 52;
+      const colWidth = (pageWidth - 80 - 15) / 2;
+
+      // Customer Card
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(40, boxY, colWidth, boxHeight, 4, 4, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(40, boxY, colWidth, boxHeight, 4, 4, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('PATIENT / CUSTOMER DETAILS', 50, boxY + 14);
+
+      doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.setTextColor(50);
-      doc.text(`Invoice No: ${billData.invoiceNumber}`, 40, 110);
-      doc.text(`Date: ${new Date(billData.createdAt || Date.now()).toLocaleString()}`, 40, 125);
-      doc.text(`Customer: ${billData.customerName}`, 340, 110);
-      doc.text(`Contact: ${billData.customerPhone || 'N/A'}`, 340, 125);
+      doc.setTextColor(15, 23, 42);
+      doc.text(billData.customerName || 'Walk-in Customer', 50, boxY + 28);
 
-      const rows = billData.items.map((it, idx) => [
-        idx + 1,
-        it.name,
-        it.batchNumber,
-        it.quantity,
-        `₹${Number(it.unitPrice).toFixed(2)}`,
-        `₹${Number(it.total).toFixed(2)}`
-      ]);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Contact: ${billData.customerPhone || 'Not Provided'}`, 50, boxY + 42);
+
+      // Invoice Info Card
+      const rightX = 40 + colWidth + 15;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(rightX, boxY, colWidth, boxHeight, 4, 4, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(rightX, boxY, colWidth, boxHeight, 4, 4, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('INVOICE INFORMATION', rightX + 10, boxY + 14);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(5, 150, 105);
+      doc.text(billData.invoiceNumber, rightX + 10, boxY + 28);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      const formattedDate = new Date(billData.createdAt || Date.now()).toLocaleString('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+      doc.text(`Date: ${formattedDate}`, rightX + 10, boxY + 42);
+
+      // Items Table
+      const tableRows = billData.items.map((it, idx) => {
+        let expDisplay = it.expiryDate || 'N/A';
+        if (it.expiryDate && it.expiryDate.includes('-')) {
+          const d = new Date(it.expiryDate);
+          expDisplay = !isNaN(d) ? d.toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) : it.expiryDate;
+        }
+
+        return [
+          idx + 1,
+          it.name,
+          it.batchNumber,
+          expDisplay,
+          it.quantity,
+          `₹${Number(it.unitPrice).toFixed(2)}`,
+          `₹${Number(it.total).toFixed(2)}`
+        ];
+      });
 
       doc.autoTable({
-        startY: 140,
-        head: [['#', 'Medicine', 'Batch', 'Qty', 'Unit Price', 'Total']],
-        body: rows,
+        startY: 160,
+        margin: { left: 40, right: 40 },
+        head: [['#', 'Item / Medicine Description', 'Batch', 'Exp Date', 'Qty', 'Unit Price', 'Amount']],
+        body: tableRows,
         theme: 'grid',
-        headStyles: { fillColor: [16, 185, 129] },
-        styles: { fontSize: 9, cellPadding: 5 },
+        headStyles: {
+          fillColor: [15, 23, 42],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 8.5,
+          halign: 'left'
+        },
+        bodyStyles: {
+          fontSize: 8.5,
+          textColor: [30, 41, 59],
+          cellPadding: 6
+        },
         columnStyles: {
-          0: { cellWidth: 25 },
-          3: { halign: 'center' },
-          4: { halign: 'right' },
-          5: { halign: 'right' }
+          0: { cellWidth: 24, halign: 'center' },
+          1: { cellWidth: 'auto' },
+          2: { cellWidth: 65, font: 'courier' },
+          3: { cellWidth: 55, halign: 'center', fontStyle: 'bold', textColor: [180, 83, 9] },
+          4: { cellWidth: 40, halign: 'center' },
+          5: { cellWidth: 60, halign: 'right' },
+          6: { cellWidth: 65, halign: 'right', fontStyle: 'bold' }
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
         }
       });
 
-      const finalY = doc.lastAutoTable.finalY + 20;
+      let finalY = doc.lastAutoTable.finalY + 16;
+      const summaryBoxWidth = 220;
+      const summaryBoxX = pageWidth - 40 - summaryBoxWidth;
 
-      doc.setFontSize(10);
-      doc.setTextColor(80);
-      doc.text('Subtotal:', 380, finalY);
-      doc.text(`₹${Number(billData.subtotal).toFixed(2)}`, 530, finalY, { align: 'right' });
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(summaryBoxX, finalY, summaryBoxWidth, 115, 4, 4, 'FD');
 
-      let offset = 16;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+
+      let lineY = finalY + 16;
+      doc.text('Subtotal:', summaryBoxX + 10, lineY);
+      doc.text(`₹${Number(billData.subtotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+
       if (billData.discount && billData.discount > 0) {
+        lineY += 14;
         doc.setTextColor(220, 38, 38);
-        doc.text('Discount:', 380, finalY + offset);
-        doc.text(`-₹${Number(billData.discount).toFixed(2)}`, 530, finalY + offset, { align: 'right' });
-        offset += 16;
+        doc.text('Discount Applied:', summaryBoxX + 10, lineY);
+        doc.text(`- ₹${Number(billData.discount).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
       }
 
-      doc.setTextColor(80);
-      doc.text('GST (5%):', 380, finalY + offset);
-      doc.text(`₹${Number(billData.tax).toFixed(2)}`, 530, finalY + offset, { align: 'right' });
-      offset += 20;
+      lineY += 14;
+      doc.setTextColor(71, 85, 105);
+      doc.text('Applicable GST (5%):', summaryBoxX + 10, lineY);
+      doc.text(`₹${Number(billData.tax).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+
+      if (billData.previousDue && billData.previousDue > 0) {
+        lineY += 14;
+        doc.setTextColor(180, 83, 9);
+        doc.text('Previous Outstanding Due:', summaryBoxX + 10, lineY);
+        doc.text(`+ ₹${Number(billData.previousDue).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+      }
+
+      lineY += 8;
+      doc.setDrawColor(203, 213, 225);
+      doc.line(summaryBoxX + 10, lineY, pageWidth - 50, lineY);
+
+      lineY += 14;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Grand Total:', summaryBoxX + 10, lineY);
+      doc.setTextColor(5, 150, 105);
+      doc.text(`₹${Number(billData.grandTotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+
+      lineY += 14;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Amount Received:', summaryBoxX + 10, lineY);
+      doc.text(`₹${Number(billData.amountPaid || billData.grandTotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+
+      if (billData.remainingDue && billData.remainingDue > 0) {
+        lineY += 14;
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(220, 38, 38);
+        doc.text('Current Balance Due:', summaryBoxX + 10, lineY);
+        doc.text(`₹${Number(billData.remainingDue).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+      }
+
+      const footerY = Math.max(finalY + 135, 740);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(15, 23, 42);
-      doc.text('Grand Total:', 380, finalY + offset);
-      doc.text(`₹${Number(billData.grandTotal).toFixed(2)}`, 530, finalY + offset, { align: 'right' });
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('TERMS & CONDITIONS:', 40, footerY);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text('1. Please verify batch & expiry details before leaving counter.', 40, footerY + 12);
+      doc.text('2. Refrigerated & Schedule items cannot be returned.', 40, footerY + 22);
+      doc.text('3. Outstanding dues must be cleared on or before next purchase.', 40, footerY + 32);
+
+      const sigX = pageWidth - 160;
+      doc.setDrawColor(203, 213, 225);
+      doc.line(sigX, footerY + 20, pageWidth - 40, footerY + 20);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Dispensing Pharmacist', sigX + 15, footerY + 32);
 
       doc.save(`${billData.invoiceNumber}.pdf`);
     }
 
-    // INVENTORY API (With defensive guards against non-array payloads)
+    // INVENTORY API
     async function fetchInventory() {
       try {
         const res = await fetch(`${API_BASE}/medicines`);
         const data = await res.json();
         
-        if (Array.isArray(data)) {
-          inventory = data;
-        } else {
-          console.error('Backend returned non-array error for /medicines:', data);
-          inventory = [];
-          if (data && data.error) {
-            alert('Database Warning: ' + data.error);
-          }
-        }
+        inventory = Array.isArray(data) ? data : [];
         renderInventory();
         checkExpiryNotifications();
       } catch (err) {
@@ -983,7 +1304,7 @@
       }
     }
 
-    // INVOICE HISTORY
+    // INVOICE ARCHIVE API
     async function fetchBills() {
       try {
         const res = await fetch(`${API_BASE}/billing`);
@@ -994,7 +1315,7 @@
         const mobileList = document.getElementById('bills-mobile-container');
 
         if (!bills.length) {
-          if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">No invoices recorded yet.</td></tr>';
+          if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">No invoices recorded yet.</td></tr>';
           if (mobileList) mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">No invoices recorded yet.</div>';
           return;
         }
@@ -1004,9 +1325,12 @@
             <tr class="hover:bg-slate-50">
               <td class="p-3 font-mono font-bold text-emerald-700">${b.invoiceNumber}</td>
               <td class="p-3 text-slate-500 text-xs">${new Date(b.createdAt).toLocaleDateString()}</td>
-              <td class="p-3 text-slate-800">${b.customerName}</td>
+              <td class="p-3 text-slate-800">${b.customerName} <span class="text-xs text-slate-400 block font-mono">${b.customerPhone || ''}</span></td>
               <td class="p-3 text-slate-600 text-xs">${b.items ? b.items.length : 0} product(s)</td>
               <td class="p-3 text-right font-bold text-slate-900">₹${Number(b.grandTotal).toFixed(2)}</td>
+              <td class="p-3 text-right font-bold ${b.remainingDue > 0 ? 'text-rose-600' : 'text-slate-400'}">
+                ${b.remainingDue > 0 ? '₹' + Number(b.remainingDue).toFixed(2) : 'Cleared'}
+              </td>
               <td class="p-3 text-center">
                 <button onclick='generatePdf(${JSON.stringify(b)})' class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">Download PDF</button>
               </td>
@@ -1019,8 +1343,9 @@
             <div class="bg-white border border-slate-200 rounded-lg p-3 flex justify-between items-center">
               <div>
                 <p class="font-mono font-bold text-xs text-emerald-700">${b.invoiceNumber}</p>
-                <p class="text-[11px] text-slate-800 font-semibold">${b.customerName}</p>
+                <p class="text-[11px] text-slate-800 font-semibold">${b.customerName} (${b.customerPhone || 'No Phone'})</p>
                 <p class="text-[10px] text-slate-400">${new Date(b.createdAt).toLocaleDateString()} • ${b.items ? b.items.length : 0} item(s)</p>
+                ${b.remainingDue > 0 ? `<span class="text-[10px] font-bold text-rose-600">Pending Due: ₹${b.remainingDue.toFixed(2)}</span>` : ''}
               </div>
               <div class="text-right">
                 <p class="font-bold text-xs text-slate-900">₹${Number(b.grandTotal).toFixed(2)}</p>
@@ -1032,6 +1357,71 @@
 
       } catch (err) {
         console.error('Fetch Bills Error:', err);
+      }
+    }
+
+    // CUSTOMER DIRECTORY API
+    async function fetchCustomers() {
+      try {
+        const res = await fetch(`${API_BASE}/customers`);
+        const data = await res.json();
+        customers = Array.isArray(data) ? data : [];
+        renderCustomers();
+      } catch (err) {
+        console.error('Customer fetch error:', err);
+      }
+    }
+
+    function renderCustomers() {
+      const q = document.getElementById('customer-search')?.value.toLowerCase() || '';
+      const filtered = customers.filter(c => 
+        (c.name && c.name.toLowerCase().includes(q)) || 
+        (c.phone && c.phone.includes(q))
+      );
+
+      const tbody = document.getElementById('customers-table-body');
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">No customers registered yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(c => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-semibold text-slate-800">${c.name}</td>
+          <td class="p-3 font-mono text-slate-600">${c.phone}</td>
+          <td class="p-3 text-right font-bold ${c.totalDue > 0 ? 'text-amber-700' : 'text-slate-400'}">
+            ₹${Number(c.totalDue).toFixed(2)}
+          </td>
+          <td class="p-3 text-center space-x-2">
+            ${c.totalDue > 0 ? `
+              <button onclick="settleCustomerDue('${c._id}', '${c.name}',${c.totalDue})" class="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded font-bold hover:bg-emerald-100">
+                Settle Due
+              </button>
+            ` : '<span class="text-xs text-slate-400">All Clear</span>'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function settleCustomerDue(id, name, currentDue) {
+      const amount = prompt(`Enter amount paid by ${name} (Current Due: ₹${currentDue}):`, currentDue);
+      if (!amount || isNaN(amount) || Number(amount) <= 0) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/customers/${id}/clear-due`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amountPaid: Number(amount) })
+        });
+
+        if (res.ok) {
+          alert('Due updated successfully!');
+          fetchCustomers();
+        } else {
+          alert('Failed to update due');
+        }
+      } catch (err) {
+        alert('Server error settling due');
       }
     }
 

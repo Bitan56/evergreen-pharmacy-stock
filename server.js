@@ -9,18 +9,16 @@ require('dotenv').config();
 const connectDB = require('./db');
 const medicineRoutes = require('./routes/medicineRoutes');
 const billingRoutes = require('./routes/billingRoutes');
+const customerRoutes = require('./routes/customerRoutes');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Serve static assets if present in public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database connection middleware
 app.use(async (req, res, next) => {
-  // Allow root static page requests to pass through without blocking if DB is cold
   if (req.path === '/' || req.path === '/index.html') {
     return next();
   }
@@ -33,11 +31,11 @@ app.use(async (req, res, next) => {
   }
 });
 
-// API Routes
+// Mounted APIs
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/customers', customerRoutes);
 
-// Explicit root route serving index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'), (err) => {
     if (err) {
@@ -50,5 +48,5 @@ module.exports = app;
 
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => console.log(`Pharmacy server live on http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`Pharmacy server running on http://localhost:${PORT}`));
 }
