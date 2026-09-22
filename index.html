@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>PharmaCare Management & POS</title>
+  <title>Evergreen Pharmacy Stock Management</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- HTML5 Barcode / QR / 2D DataMatrix Scanner -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -27,8 +27,8 @@
       <div class="flex items-center space-x-2.5">
         <div class="bg-emerald-600 text-white p-1.5 sm:p-2 rounded-lg font-black text-base sm:text-xl leading-none">Rx</div>
         <div>
-          <h1 class="font-bold text-sm sm:text-lg leading-tight">PharmaCare</h1>
-          <p class="text-[10px] sm:text-xs text-slate-500">Live Inventory & POS</p>
+          <h1 class="font-bold text-sm sm:text-lg leading-tight">Evergreen Pharmacy</h1>
+          <p class="text-[10px] sm:text-xs text-slate-500">Stock Management & POS</p>
         </div>
       </div>
 
@@ -954,7 +954,7 @@
         fps: 20,
         qrbox: (w, h) => ({ width: Math.min(w * 0.85, 280), height: Math.min(h * 0.7, 220) }),
         formatsToSupport: [
-          Html5QrcodeSupportedFormats.DATA_MATRIX,
+          Html5QrcodeSupportedFormats.DATA_MATRIX, // Strip square 2D code
           Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.EAN_13,
           Html5QrcodeSupportedFormats.EAN_8,
@@ -1303,7 +1303,7 @@
       doc.setFontSize(8.5);
       doc.setTextColor(100, 116, 139);
       doc.text('Retail Drug License No: DL-2024-WB-89210 | GSTIN: 19ABCDE1234F1Z5', 40, 62);
-      doc.text('124 Medical Campus Road, City Center, PIN: 700001 | Ph: +91 98765 43210', 40, 74);
+      doc.text('Tagra, Ramnagar, Tarakeswar, PIN-712410 | Ph: +91 98765 43210', 40, 74);
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(13);
