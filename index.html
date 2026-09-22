@@ -86,7 +86,7 @@
         <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Point of Sale</h2>
-            <p class="text-[11px] sm:text-xs text-slate-500">Scan barcodes or 2D strip codes via scanner gun or device camera</p>
+            <p class="text-[11px] sm:text-xs text-slate-500">Scan barcodes or search medicines by name and batch</p>
           </div>
           <button onclick="startCameraScanner('pos')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" /></svg>
@@ -95,20 +95,56 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 sm:mb-6">
-          <div class="sm:col-span-2">
-            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Scan / Enter Barcode (Press Enter)</label>
-            <input type="text" id="pos-barcode-input" placeholder="Scan barcode or type code + Enter..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
+          <!-- 1. Barcode Scanner Input -->
+          <div>
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Scan Barcode (Press Enter)</label>
+            <input 
+              type="text" 
+              id="pos-barcode-input" 
+              placeholder="Scan code + Enter..." 
+              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" 
+            />
           </div>
 
+          <!-- 2. Search by Medicine Name or Batch Number -->
+          <div class="relative">
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Search Name or Batch</label>
+            <input 
+              type="text" 
+              id="pos-medicine-search" 
+              oninput="handlePosMedicineSearch(this.value)" 
+              placeholder="Type name or batch..." 
+              autocomplete="off" 
+              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" 
+            />
+            <div 
+              id="pos-medicine-suggestions" 
+              class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-2xl z-50 max-h-60 overflow-y-auto divide-y divide-slate-100"
+            ></div>
+          </div>
+
+          <!-- 3. Customer Mobile & Auto-lookup -->
           <div class="relative">
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Customer Mobile</label>
-            <input type="tel" id="pos-cust-phone" oninput="handlePhoneInput(this.value)" placeholder="10-digit mobile number" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
+            <input 
+              type="tel" 
+              id="pos-cust-phone" 
+              oninput="handlePhoneInput(this.value)" 
+              placeholder="10-digit mobile number" 
+              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" 
+            />
             <div id="phone-suggestions" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto"></div>
           </div>
 
+          <!-- 4. Customer Name -->
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
-            <input type="text" id="pos-cust-name" placeholder="Walk-in Customer" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <input 
+              type="text" 
+              id="pos-cust-name" 
+              placeholder="Walk-in Customer" 
+              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" 
+            />
           </div>
         </div>
 
@@ -137,7 +173,7 @@
               </tr>
             </thead>
             <tbody id="cart-table-body" class="divide-y divide-slate-100">
-              <tr><td colspan="7" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode to add medicine.</td></tr>
+              <tr><td colspan="7" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode or search above to add medicine.</td></tr>
             </tbody>
           </table>
         </div>
@@ -145,7 +181,7 @@
         <!-- Mobile Cart Cards -->
         <div id="cart-mobile-container" class="md:hidden space-y-2.5 mb-6">
           <div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">
-            Cart is empty. Scan barcode to add medicine.
+            Cart is empty. Scan barcode or search above to add medicine.
           </div>
         </div>
 
@@ -239,13 +275,13 @@
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Medicine</h2>
-            <p class="text-[10px] text-slate-500">Scan barcode, 2D strip matrix, or generate ID</p>
+            <p class="text-[10px] text-slate-500">Scan barcode, 2D matrix, or generate a custom ID</p>
           </div>
           <button onclick="startCameraScanner('inventory')" class="text-xs bg-emerald-50 text-emerald-700 active:bg-emerald-100 font-semibold px-2.5 py-1.5 rounded transition">Scan Code</button>
         </div>
 
         <form id="medicine-form" onsubmit="handleSaveMedicine(event)" class="space-y-3 sm:space-y-4">
-          <!-- Barcode / 2D Matrix / Gen ID Field -->
+          <!-- Barcode / 2D Matrix Input with Gen ID -->
           <div>
             <div class="flex justify-between items-center mb-1">
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Barcode / 2D Matrix *</label>
@@ -589,10 +625,116 @@
         }
       });
 
-      if (tab === 'inventory') fetchInventory();
+      if (tab === 'pos' || tab === 'inventory') fetchInventory();
       if (tab === 'bills') fetchBills();
       if (tab === 'customers') fetchCustomers();
     }
+
+    // LIVE MEDICINE NAME & BATCH NUMBER SEARCH IN POS
+    function handlePosMedicineSearch(query) {
+      const suggestionsBox = document.getElementById('pos-medicine-suggestions');
+      const q = query.trim().toLowerCase();
+
+      if (!q || q.length < 1) {
+        suggestionsBox.classList.add('hidden');
+        suggestionsBox.innerHTML = '';
+        return;
+      }
+
+      const safeInventory = Array.isArray(inventory) ? inventory : [];
+      const matches = safeInventory.filter(item => 
+        (item.name && item.name.toLowerCase().includes(q)) ||
+        (item.batchNumber && item.batchNumber.toLowerCase().includes(q)) ||
+        (item.genericName && item.genericName.toLowerCase().includes(q))
+      ).slice(0, 6);
+
+      if (matches.length === 0) {
+        suggestionsBox.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">No matching medicines or batches found</div>';
+        suggestionsBox.classList.remove('hidden');
+        return;
+      }
+
+      suggestionsBox.innerHTML = matches.map(med => {
+        const isExpired = new Date(med.expiryDate) < new Date();
+        const expStr = med.expiryDate ? new Date(med.expiryDate).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) : 'N/A';
+        
+        return `
+          <div 
+            onclick='selectMedicineFromSearch(${JSON.stringify(med)})' 
+            class="p-2.5 hover:bg-emerald-50/70 cursor-pointer flex justify-between items-center transition ${isExpired ? 'opacity-60 bg-red-50/40' : ''}"
+          >
+            <div class="min-w-0 flex-1 pr-2">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-xs text-slate-800 truncate">${med.name}</span>
+                ${isExpired ? '<span class="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.2 rounded font-bold">Expired</span>' : ''}
+              </div>
+              <p class="text-[10px] text-slate-500 font-mono">
+                Batch: <b class="text-slate-700">${med.batchNumber}</b> • Exp: ${expStr} • Stock: <b class="${med.quantity <= 5 ? 'text-amber-600' : 'text-slate-700'}">${med.quantity}</b>
+              </p>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <span class="font-bold text-xs text-emerald-700">₹${Number(med.price).toFixed(2)}</span>
+              <span class="block text-[10px] text-emerald-600 font-semibold">+ Add</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      suggestionsBox.classList.remove('hidden');
+    }
+
+    function selectMedicineFromSearch(med) {
+      const suggestionsBox = document.getElementById('pos-medicine-suggestions');
+      const searchInput = document.getElementById('pos-medicine-search');
+
+      suggestionsBox.classList.add('hidden');
+      searchInput.value = '';
+
+      if (new Date(med.expiryDate) < new Date()) {
+        alert(`BLOCKED: ${med.name} (Batch: ${med.batchNumber}) has expired and cannot be dispensed.`);
+        return;
+      }
+
+      if (med.quantity <= 0) {
+        alert(`${med.name} (Batch: ${med.batchNumber}) is out of stock.`);
+        return;
+      }
+
+      const expFormatted = med.expiryDate 
+        ? new Date(med.expiryDate).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) 
+        : 'N/A';
+
+      const existing = cart.find(i => i.medicineId === med._id);
+      if (existing) {
+        if (existing.quantity + 1 > med.quantity) {
+          alert(`Stock limit reached (${med.quantity} available)`);
+          return;
+        }
+        existing.quantity++;
+        existing.total = existing.quantity * existing.unitPrice;
+      } else {
+        cart.push({
+          medicineId: med._id,
+          name: med.name,
+          batchNumber: med.batchNumber,
+          expiryDate: expFormatted,
+          unitPrice: med.price,
+          quantity: 1,
+          maxStock: med.quantity,
+          total: med.price
+        });
+      }
+
+      renderCart();
+    }
+
+    document.addEventListener('click', (e) => {
+      const suggestionsBox = document.getElementById('pos-medicine-suggestions');
+      const searchInput = document.getElementById('pos-medicine-search');
+      if (suggestionsBox && !suggestionsBox.contains(e.target) && e.target !== searchInput) {
+        suggestionsBox.classList.add('hidden');
+      }
+    });
 
     // PHARMA STRIP 2D MATRIX & GS1 PARSER
     function parsePharmaStripCode(decodedRaw) {
@@ -604,7 +746,6 @@
 
       const raw = decodedRaw.trim();
 
-      // 1. Check GS1 Application Identifier standards (AI 01 = GTIN, AI 17 = Expiry YYMMDD, AI 10 = Batch)
       if (/^01\d{14}/.test(raw)) {
         parsed.barcode = raw.substring(2, 16);
         
@@ -620,15 +761,11 @@
         if (batchIndex !== -1) {
           parsed.batchNumber = raw.substring(batchIndex + 2).split(/[\x1D\s]/)[0];
         }
-      } 
-      // 2. Delimited 2D Matrix Codes
-      else if (raw.includes('|') || raw.includes(',')) {
+      } else if (raw.includes('|') || raw.includes(',')) {
         const parts = raw.split(/[|,]/);
         parsed.barcode = parts[0] || raw;
         parsed.batchNumber = parts[1] || '';
-      } 
-      // 3. Fallback string
-      else {
+      } else {
         parsed.barcode = raw;
       }
 
@@ -817,7 +954,7 @@
         fps: 20,
         qrbox: (w, h) => ({ width: Math.min(w * 0.85, 280), height: Math.min(h * 0.7, 220) }),
         formatsToSupport: [
-          Html5QrcodeSupportedFormats.DATA_MATRIX, // Supports strip 2D matrix codes
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
           Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.EAN_13,
           Html5QrcodeSupportedFormats.EAN_8,
@@ -839,7 +976,6 @@
             if (activeScanTarget === 'pos') {
               addItemToCartByBarcode(decodedText);
             } else {
-              // Parse pharma 2D strip standard or 1D barcode
               const data = parsePharmaStripCode(decodedText);
               
               document.getElementById('form-barcode').value = data.barcode || decodedText;
@@ -889,7 +1025,7 @@
     let lastKeyTime = Date.now();
 
     window.addEventListener('keydown', (e) => {
-      if (['pos-cust-name', 'pos-cust-phone', 'pos-amount-paid', 'form-name', 'form-generic', 'form-batch', 'form-cost-price', 'form-price', 'form-rack', 'inventory-search', 'customer-search'].includes(e.target.id)) {
+      if (['pos-cust-name', 'pos-cust-phone', 'pos-amount-paid', 'pos-medicine-search', 'form-name', 'form-generic', 'form-batch', 'form-cost-price', 'form-price', 'form-rack', 'inventory-search', 'customer-search'].includes(e.target.id)) {
         return;
       }
 
@@ -1027,8 +1163,8 @@
       const mobileList = document.getElementById('cart-mobile-container');
 
       if (cart.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode to add medicine.</td></tr>';
-        mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">Cart is empty. Scan barcode to add medicine.</div>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode or search above to add medicine.</td></tr>';
+        mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">Cart is empty. Scan barcode or search above to add medicine.</div>';
         document.getElementById('pos-subtotal').innerText = '₹0.00';
         document.getElementById('pos-discount-display').innerText = '-₹0.00';
         document.getElementById('pos-tax').innerText = '₹0.00';
