@@ -159,4 +159,71 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// GET /api/medicines/lookup-salt?name=Paracetamol
+router.get('/lookup-salt', async (req, res) => {
+  const queryName = (req.query.name || '').trim();
+  if (!queryName || queryName.length < 2) {
+    return res.json({ found: false });
+  }
+
+  // 1. Check local database first (if you've already stocked this medicine before)
+  try {
+    const localMatch = await Medicine.findOne({
+      name: { $regex: new RegExp(`^${queryName}$`, 'i') },
+      genericName: { $exists: true, $ne: '' }
+    });
+    if (localMatch && localMatch.genericName) {
+      return res.json({ found: true, salt: localMatch.genericName, source: 'local' });
+    }
+  } catch (err) {
+    console.warn('Local salt lookup error:', err.message);
+  }
+
+  // 2. Query OpenFDA Drug Database (Free, no API key needed)
+  try {
+    const fdaUrl = `https://api.fda.gov/drug/ndc.json?search=brand_name:"${encodeURIComponent(queryName)}"&limit=1`;
+    const fdaRes = await fetch(fdaUrl);
+    if (fdaRes.ok) {
+      const data = await fdaRes.json();
+      if (data.results && data.results.length > 0) {
+        const drug = data.results[0];
+        const salt = drug.generic_name || 
+          (drug.active_ingredients && drug.active_ingredients.map(i => `${i.name} ${i.strength || ''}`.trim()).join(' + '));
+        if (salt) {
+          return res.json({ found: true, salt: salt.trim(), source: 'openfda' });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('OpenFDA salt lookup error:', err.message);
+  }
+
+  // 3. Query NIH / NLM RxNorm Approximate Term API (Free, no API key needed)
+  try {
+    const rxNormUrl = `https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(queryName)}&maxEntries=1`;
+    const rxRes = await fetch(rxNormUrl, { headers: { 'Accept': 'application/json' } });
+    if (rxRes.ok) {
+      const rxData = await rxRes.json();
+      const candidate = rxData.approximateGroup?.candidate?.[0];
+      if (candidate && candidate.rxcui) {
+        const propUrl = `https://rxnav.nlm.nih.gov/REST/rxcui/${candidate.rxcui}/allProperties.json?prop=names`;
+        const propRes = await fetch(propUrl, { headers: { 'Accept': 'application/json' } });
+        if (propRes.ok) {
+          const propData = await propRes.json();
+          const propConcept = propData.propConceptGroup?.propConcept?.find(p => p.propName === 'RxNorm Name');
+          const nameFound = propConcept?.propValue;
+          if (nameFound && nameFound.toLowerCase() !== queryName.toLowerCase()) {
+            return res.json({ found: true, salt: nameFound, source: 'rxnorm' });
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('RxNorm salt lookup error:', err.message);
+  }
+
+  // 4. Return not found if no registry matches
+  return res.json({ found: false, message: 'Salt composition not found in public databases.' });
+});
+
 module.exports = router;

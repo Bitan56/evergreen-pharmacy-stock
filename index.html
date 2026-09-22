@@ -240,7 +240,7 @@
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Medicine</h2>
-            <p class="text-[10px] text-slate-500">Auto-fetches from medical database on scan</p>
+            <p class="text-[10px] text-slate-500">Auto-fetches from medical database on scan / typing</p>
           </div>
           <button onclick="startCameraScanner('inventory')" class="text-xs bg-emerald-50 text-emerald-700 active:bg-emerald-100 font-semibold px-2.5 py-1.5 rounded transition">Scan Barcode</button>
         </div>
@@ -282,13 +282,32 @@
             <div id="ocr-status-box" class="hidden text-[11px] p-2 rounded border"></div>
 
             <div>
-              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
-              <input type="text" id="form-name" required placeholder="e.g. Paracetamol 500mg" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+              <div class="flex justify-between items-center mb-1">
+                <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Medicine Name *</label>
+                <span id="name-typing-status" class="text-[10px] font-medium text-slate-400"></span>
+              </div>
+              <input 
+                type="text" 
+                id="form-name" 
+                required 
+                oninput="handleMedicineNameInput(this.value)" 
+                onblur="fetchSaltComposition(this.value)" 
+                placeholder="e.g. Dolo 650, Augmentin 625, Paracetamol" 
+                class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" 
+              />
             </div>
 
             <div>
-              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Generic / Salt Composition</label>
-              <input type="text" id="form-generic" placeholder="e.g. Acetaminophen / Paracetamol IP" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+              <div class="flex justify-between items-center mb-1">
+                <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Generic / Salt Composition</label>
+                <span id="salt-api-status" class="text-[10px] font-medium text-slate-400"></span>
+              </div>
+              <input 
+                type="text" 
+                id="form-generic" 
+                placeholder="Auto-fetched or enter manually" 
+                class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" 
+              />
             </div>
           </div>
 
@@ -428,7 +447,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-slate-800">Customer Directory & Dues</h2>
-          <p class="text-[11px] text-slate-500">Track customers and settle outstanding balances</p>
+          <p class="text-[11px] sm:text-xs text-slate-500">Track customers and settle outstanding balances</p>
         </div>
         <input type="text" id="customer-search" oninput="renderCustomers()" placeholder="Search name or mobile..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
       </div>
@@ -526,6 +545,7 @@
     let activeScanTarget = 'pos';
     let currentCustomerDue = 0;
     let ocrStream = null;
+    let saltLookupTimer = null;
 
     // NOTIFICATIONS
     function toggleNotifications() {
@@ -634,6 +654,53 @@
       if (tab === 'inventory') fetchInventory();
       if (tab === 'bills') fetchBills();
       if (tab === 'customers') fetchCustomers();
+    }
+
+    // AUTOMATIC SALT COMPOSITION FETCHING AS USER TYPES
+    function handleMedicineNameInput(val) {
+      clearTimeout(saltLookupTimer);
+      const name = val.trim();
+      const statusBadge = document.getElementById('salt-api-status');
+
+      if (name.length < 3) {
+        statusBadge.innerText = '';
+        return;
+      }
+
+      statusBadge.innerText = 'Searching medical databases...';
+      statusBadge.className = 'text-[10px] font-medium text-blue-600 animate-pulse';
+
+      saltLookupTimer = setTimeout(() => {
+        fetchSaltComposition(name);
+      }, 600);
+    }
+
+    async function fetchSaltComposition(name) {
+      const cleanName = name.trim();
+      if (!cleanName || cleanName.length < 3) return;
+
+      const genericInput = document.getElementById('form-generic');
+      const statusBadge = document.getElementById('salt-api-status');
+
+      try {
+        const res = await fetch(`${API_BASE}/medicines/lookup-salt?name=${encodeURIComponent(cleanName)}`);
+        const result = await res.json();
+
+        if (result.found && result.salt) {
+          // Auto-fill salt composition
+          genericInput.value = result.salt;
+          statusBadge.innerText = `✓ Found (${result.source || 'Medical API'})`;
+          statusBadge.className = 'text-[10px] font-bold text-emerald-600';
+        } else {
+          // Failure / Not found fallback
+          statusBadge.innerText = 'Not in registry — please enter manually';
+          statusBadge.className = 'text-[10px] font-semibold text-amber-600';
+          // User can still type manually in genericInput
+        }
+      } catch (err) {
+        statusBadge.innerText = 'Registry offline — enter manually';
+        statusBadge.className = 'text-[10px] font-semibold text-slate-400';
+      }
     }
 
     // PROFIT MARGIN CALCULATOR
@@ -786,7 +853,11 @@
       if (!detectedName && lines.length > 0) detectedName = lines[0];
       if (!detectedSalt && lines.length > 1) detectedSalt = lines[1];
 
-      if (detectedName) document.getElementById('form-name').value = detectedName;
+      if (detectedName) {
+        document.getElementById('form-name').value = detectedName;
+        // If salt wasn't explicitly in the image, try API lookup
+        if (!detectedSalt) fetchSaltComposition(detectedName);
+      }
       if (detectedSalt) document.getElementById('form-generic').value = detectedSalt;
 
       if (detectedName || detectedSalt) {
@@ -879,7 +950,7 @@
       return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
     }
 
-    // MEDICAL API LOOKUP ON SCAN / ENTER
+    // MEDICAL API LOOKUP ON BARCODE SCAN
     async function fetchMedicineInfo(barcode) {
       const cleanBarcode = barcode.trim();
       if (!cleanBarcode) return;
@@ -1586,6 +1657,7 @@
 
         document.getElementById('medicine-form').reset();
         document.getElementById('barcode-api-status').innerText = '';
+        document.getElementById('salt-api-status').innerText = '';
         document.getElementById('profit-margin-container').classList.add('hidden');
         document.getElementById('ocr-status-box').classList.add('hidden');
         await fetchInventory();
