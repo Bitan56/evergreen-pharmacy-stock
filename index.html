@@ -13,7 +13,8 @@
   <style>
     #camera-viewport {
       width: 100% !important;
-      min-height: 260px !important;
+      min-height: 280px !important;
+      height: 280px !important;
       position: relative !important;
       background-color: #000 !important;
       display: flex !important;
@@ -25,13 +26,9 @@
     #camera-viewport video {
       width: 100% !important;
       height: 100% !important;
-      min-height: 260px !important;
       object-fit: cover !important;
       border-radius: 0.5rem !important;
       display: block !important;
-    }
-    #camera-viewport__scan_region {
-      min-height: 260px !important;
     }
   </style>
 </head>
@@ -521,7 +518,7 @@
         <h3 class="font-bold text-sm sm:text-base text-slate-800">Scan Barcode / 2D Matrix</h3>
         <button onclick="stopCameraScanner()" class="text-slate-400 hover:text-slate-600 p-1 text-2xl font-bold leading-none">&times;</button>
       </div>
-      <div id="camera-viewport" class="w-full bg-black rounded-lg overflow-hidden relative aspect-square sm:aspect-video flex items-center justify-center"></div>
+      <div id="camera-viewport"></div>
       <p id="scanner-status" class="text-[11px] sm:text-xs text-center text-slate-500 mt-3">Hold phone 12–15 cm away under steady light.</p>
     </div>
   </div>
@@ -953,9 +950,8 @@
       return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
     }
 
-    // STOP CAMERA SCANNER & FLUSH VIDEO TRACKS
+    // STOP CAMERA SCANNER & HARD RESET
     async function stopCameraScanner() {
-      const status = document.getElementById('scanner-status');
       if (qrEngine) {
         try {
           if (qrEngine.isScanning) {
@@ -968,7 +964,6 @@
         qrEngine = null;
       }
 
-      // Hard-kill any stray video tracks that might be locking the sensor
       const viewport = document.getElementById('camera-viewport');
       if (viewport) {
         const videos = viewport.querySelectorAll('video');
@@ -982,22 +977,22 @@
       }
 
       document.getElementById('scanner-modal').classList.add('hidden');
-      if (status) status.innerText = 'Camera stopped.';
     }
 
-    // CAMERA SCANNER (Zero-dimension & Black screen fix)
+    // ROBUST CAMERA INITIALIZATION
     async function startCameraScanner(target) {
       activeScanTarget = target;
       const modal = document.getElementById('scanner-modal');
       const status = document.getElementById('scanner-status');
       const viewport = document.getElementById('camera-viewport');
 
-      // 1. Show modal FIRST so browser calculates true DOM layout dimensions
+      // 1. Show modal first so layout dimensions exist
       modal.classList.remove('hidden');
       viewport.innerHTML = '';
       status.innerText = 'Requesting camera access...';
+      status.className = 'text-[11px] sm:text-xs text-center text-slate-500 mt-3';
 
-      // 2. Clean up any previous engine instances
+      // 2. Clean up any previous engine
       if (qrEngine) {
         try {
           if (qrEngine.isScanning) await qrEngine.stop();
@@ -1006,8 +1001,24 @@
         qrEngine = null;
       }
 
-      // 3. Small tick to allow browser DOM reflow after unhiding the modal
+      // Small tick for DOM reflow
       await new Promise(resolve => setTimeout(resolve, 80));
+
+      // 3. Request permissions directly via getUserMedia first
+      try {
+        const preStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        // Stop the test stream tracks immediately
+        preStream.getTracks().forEach(t => t.stop());
+      } catch (permErr) {
+        console.warn('Direct getUserMedia test failed:', permErr);
+        if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
+          status.innerHTML = 'Camera permission blocked. Tap the tune/lock icon in your URL bar and set Camera to <b>Allow</b>.';
+          status.className = 'text-[11px] sm:text-xs text-center text-rose-600 mt-3 font-semibold';
+          return;
+        }
+      }
 
       qrEngine = new Html5Qrcode('camera-viewport', {
         experimentalFeatures: { useBarCodeDetectorIfSupported: true },
@@ -1048,33 +1059,29 @@
       };
 
       try {
-        // Query available video devices
-        const devices = await Html5Qrcode.getCameras();
-
-        if (devices && devices.length > 0) {
-          // Prefer back/rear camera
-          const backCamera = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[devices.length - 1];
-          
-          await qrEngine.start(
-            backCamera.id,
-            scanConfig,
-            handleSuccess,
-            () => {}
-          );
-        } else {
-          // Fallback to environment facing constraint if device labels are unavailable
-          await qrEngine.start(
-            { facingMode: 'environment' },
-            scanConfig,
-            handleSuccess,
-            () => {}
-          );
-        }
-
+        await qrEngine.start(
+          { facingMode: 'environment' },
+          scanConfig,
+          handleSuccess,
+          () => {}
+        );
         status.innerText = 'Hold camera ~12-15 cm away under steady light.';
-      } catch (err) {
-        console.error('Camera initialization failed:', err);
-        status.innerText = 'Could not stream camera. Try refreshing or use manual entry / Gen ID.';
+      } catch (startErr) {
+        console.warn('FacingMode environment failed, querying available device IDs:', startErr);
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            const backCamera = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[devices.length - 1];
+            await qrEngine.start(backCamera.id, scanConfig, handleSuccess, () => {});
+            status.innerText = 'Hold camera ~12-15 cm away under steady light.';
+          } else {
+            throw new Error('No video devices found');
+          }
+        } catch (finalErr) {
+          console.error('All camera attempts failed:', finalErr);
+          status.innerHTML = 'Camera blocked or unsupported. Use the <b>Gen ID</b> button for barcode-less strips.';
+          status.className = 'text-[11px] sm:text-xs text-center text-rose-600 mt-3 font-semibold';
+        }
       }
     }
 
