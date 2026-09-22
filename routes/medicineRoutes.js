@@ -46,6 +46,7 @@ router.get('/alerts/expiring', async (req, res) => {
 // 4. Add or Restock Medicine (with Cost Price & Selling Price)
 // POST /api/medicines/upsert - Support single or multiple barcodes
 // POST /api/medicines/upsert - Support optional barcodes, editing, and restocking
+// POST /api/medicines/upsert - Support purchase date
 router.post('/upsert', async (req, res) => {
   try {
     const { 
@@ -58,9 +59,10 @@ router.post('/upsert', async (req, res) => {
       quantity, 
       costPrice, 
       price, 
+      purchaseDate, // <--- Extract purchaseDate
       expiryDate, 
       rackLocation,
-      mode // 'edit' (overwrite quantity/details) or 'restock' (increment quantity)
+      mode
     } = req.body;
 
     if (!name || !batchNumber || costPrice === undefined || !price || !expiryDate) {
@@ -69,8 +71,9 @@ router.post('/upsert', async (req, res) => {
 
     const cleanBatch = batchNumber.trim();
     const cleanName = name.trim();
+    const finalPurchaseDate = purchaseDate ? new Date(purchaseDate) : new Date();
 
-    // 1. Direct ID Edit Mode (Update existing record)
+    // 1. Direct ID Edit Mode
     if (medicineId) {
       const updateData = {
         name: cleanName,
@@ -78,6 +81,7 @@ router.post('/upsert', async (req, res) => {
         batchNumber: cleanBatch,
         costPrice: Number(costPrice),
         price: Number(price),
+        purchaseDate: finalPurchaseDate, // <--- Save purchaseDate
         expiryDate: new Date(expiryDate),
         rackLocation: (rackLocation || 'General Shelf').trim()
       };
@@ -94,18 +98,16 @@ router.post('/upsert', async (req, res) => {
       return res.status(200).json({ success: true, count: 1, medicine: updated });
     }
 
-    // 2. Barcode Handling: Use provided barcodes or auto-generate one
+    // 2. Multi / Single Barcode Handling
     let codeList = Array.isArray(barcodes) && barcodes.length > 0 
       ? barcodes 
       : (barcode ? [barcode] : []);
 
     if (codeList.length === 0) {
-      // Auto-generate unique identifier for barcode-less stock
       const cleanPrefix = cleanName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || 'MED';
       codeList = [`${cleanPrefix}-${cleanBatch}-${Date.now().toString().slice(-4)}`];
     }
 
-    // Upsert items for each barcode under this batch
     const results = await Promise.all(
       codeList.map(code => 
         Medicine.findOneAndUpdate(
@@ -117,6 +119,7 @@ router.post('/upsert', async (req, res) => {
               batchNumber: cleanBatch,
               costPrice: Number(costPrice),
               price: Number(price),
+              purchaseDate: finalPurchaseDate, // <--- Save purchaseDate
               expiryDate: new Date(expiryDate),
               rackLocation: (rackLocation || 'General Shelf').trim()
             },

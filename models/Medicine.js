@@ -1,15 +1,19 @@
 const mongoose = require('mongoose');
 
-const MedicineSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  genericName: { type: String, trim: true, default: '' },
-  barcode: { type: String, required: true, unique: true, trim: true, index: true },
-  batchNumber: { type: String, required: true, trim: true },
-  quantity: { type: Number, required: true, min: 0, default: 0 },
-  costPrice: { type: Number, required: true, min: 0, default: 0 }, // Purchase / Cost Price
-  price: { type: Number, required: true, min: 0 }, // Selling Price (MRP)
-  expiryDate: { type: Date, required: true },
-  rackLocation: { type: String, default: 'General Shelf' }
-}, { timestamps: true });
+const medicineSchema = new mongoose.Schema(
+  {
+    barcode: { type: String, required: true, unique: true, index: true },
+    name: { type: String, required: true, index: true },
+    genericName: { type: String, default: '' },
+    batchNumber: { type: String, required: true, index: true },
+    quantity: { type: Number, required: true, min: 0 },
+    costPrice: { type: Number, required: true, min: 0 },
+    price: { type: Number, required: true, min: 0 },
+    purchaseDate: { type: Date, default: Date.now }, // <--- Added Purchase Date field
+    expiryDate: { type: Date, required: true, index: true },
+    rackLocation: { type: String, default: 'General Shelf' }
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.models.Medicine || mongoose.model('Medicine', MedicineSchema);
+module.exports = mongoose.model('Medicine', medicineSchema);

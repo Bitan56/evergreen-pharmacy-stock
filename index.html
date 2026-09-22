@@ -399,13 +399,18 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Date of Purchase</label>
+              <input type="date" id="form-purchase-date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Expiry Date *</label>
               <input type="date" id="form-expiry" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
-            <div>
-              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Rack / Shelf Location</label>
-              <input type="text" id="form-rack" placeholder="Rack B, Box 2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
-            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Rack / Shelf Location</label>
+            <input type="text" id="form-rack" placeholder="Rack B, Box 2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
           </div>
 
           <button type="submit" id="form-submit-btn" class="w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm">
@@ -477,7 +482,7 @@
             />
           </div>
           <div>
-            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Filter by Date of Purchase / Entry</label>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Filter by Date of Purchase</label>
             <input 
               type="date" 
               id="details-search-date" 
@@ -607,7 +612,7 @@
       <div id="camera-viewport"></div>
       <p id="scanner-status" class="text-[11px] sm:text-xs text-center text-slate-500 mt-3">Hold phone 12–15 cm away under steady light.</p>
       <div id="scanner-multi-controls" class="hidden mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
-        <span id="scanner-count-badge" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">0 scanned</span>
+        <span id="scanner-count-badge" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">0 attached</span>
         <button onclick="stopCameraScanner()" class="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Done Scanning</button>
       </div>
     </div>
@@ -654,7 +659,7 @@
           <div id="modal-med-expiry"></div>
         </div>
         <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Date of Purchase / Stocked</span>
+          <span class="text-slate-400 block text-[10px] uppercase font-bold">Date of Purchase</span>
           <span id="modal-med-purchased" class="font-medium text-slate-700"></span>
         </div>
       </div>
@@ -865,6 +870,9 @@
       document.getElementById('form-medicine-id').value = '';
       document.getElementById('form-submit-mode').value = 'restock';
 
+      // Default purchase date to today
+      document.getElementById('form-purchase-date').value = new Date().toISOString().split('T')[0];
+
       document.getElementById('stock-form-title').innerText = 'Add / Restock Batch';
       document.getElementById('stock-form-subtitle').innerText = 'Scan barcodes (optional) or type details directly';
       document.getElementById('form-qty-label').innerText = 'Quantity to Add *';
@@ -877,7 +885,6 @@
       renderBarcodeTags();
     }
 
-    // Edit an existing medicine batch's parameters
     function loadMedicineForEdit(med) {
       switchTab('inventory');
 
@@ -899,6 +906,12 @@
       document.getElementById('form-price').value = med.price;
       document.getElementById('form-rack').value = med.rackLocation || '';
 
+      if (med.purchaseDate) {
+        document.getElementById('form-purchase-date').value = med.purchaseDate.split('T')[0];
+      } else {
+        document.getElementById('form-purchase-date').value = new Date().toISOString().split('T')[0];
+      }
+
       if (med.expiryDate) {
         document.getElementById('form-expiry').value = med.expiryDate.split('T')[0];
       }
@@ -909,7 +922,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Add more stock to an existing batch
     function loadMedicineForRestock(med) {
       switchTab('inventory');
 
@@ -930,6 +942,12 @@
       document.getElementById('form-cost-price').value = med.costPrice;
       document.getElementById('form-price').value = med.price;
       document.getElementById('form-rack').value = med.rackLocation || '';
+
+      if (med.purchaseDate) {
+        document.getElementById('form-purchase-date').value = med.purchaseDate.split('T')[0];
+      } else {
+        document.getElementById('form-purchase-date').value = new Date().toISOString().split('T')[0];
+      }
 
       if (med.expiryDate) {
         document.getElementById('form-expiry').value = med.expiryDate.split('T')[0];
@@ -957,9 +975,9 @@
 
         let matchesDate = true;
         if (dateFilter) {
-          const createdAtDate = item.createdAt ? item.createdAt.split('T')[0] : '';
-          const updatedAtDate = item.updatedAt ? item.updatedAt.split('T')[0] : '';
-          matchesDate = (createdAtDate === dateFilter || updatedAtDate === dateFilter);
+          const pDate = item.purchaseDate ? item.purchaseDate.split('T')[0] : '';
+          const cDate = item.createdAt ? item.createdAt.split('T')[0] : '';
+          matchesDate = (pDate === dateFilter || cDate === dateFilter);
         }
 
         return matchesKeyword && matchesDate;
@@ -1051,10 +1069,11 @@
       document.getElementById('modal-med-price').innerText = `₹${Number(med.price).toFixed(2)}`;
       document.getElementById('modal-med-expiry').innerHTML = getExpiryBadge(med.expiryDate);
 
-      const purchaseDate = med.createdAt ? new Date(med.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : 'N/A';
+      const purchaseDate = med.purchaseDate 
+        ? new Date(med.purchaseDate).toLocaleDateString('en-IN', { dateStyle: 'medium' }) 
+        : (med.createdAt ? new Date(med.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : 'N/A');
       document.getElementById('modal-med-purchased').innerText = purchaseDate;
 
-      // Link edit button in modal
       document.getElementById('modal-edit-btn').onclick = () => {
         closeMedicineDetailsModal();
         loadMedicineForRestock(med);
@@ -1224,6 +1243,9 @@
           document.getElementById('form-cost-price').value = med.costPrice || '';
           document.getElementById('form-price').value = med.price || '';
           document.getElementById('form-rack').value = med.rackLocation || '';
+          if (med.purchaseDate) {
+            document.getElementById('form-purchase-date').value = med.purchaseDate.split('T')[0];
+          }
           if (med.expiryDate) {
             document.getElementById('form-expiry').value = med.expiryDate.split('T')[0];
           }
@@ -1511,7 +1533,7 @@
             throw new Error('No video devices found');
           }
         } catch (finalErr) {
-          status.innerHTML = 'Camera blocked or unsupported. Use the <b>Gen ID</b> button for barcode-less strips.';
+          status.innerHTML = 'Camera blocked or unsupported. You can still enter details manually.';
           status.className = 'text-[11px] sm:text-xs text-center text-rose-600 mt-3 font-semibold';
         }
       }
@@ -2134,6 +2156,7 @@
         quantity: document.getElementById('form-qty').value,
         costPrice: document.getElementById('form-cost-price').value,
         price: document.getElementById('form-price').value,
+        purchaseDate: document.getElementById('form-purchase-date').value || undefined,
         expiryDate: document.getElementById('form-expiry').value,
         rackLocation: document.getElementById('form-rack').value.trim()
       };
