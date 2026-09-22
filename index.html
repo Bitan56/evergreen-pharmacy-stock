@@ -11,11 +11,27 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <style>
+    #camera-viewport {
+      width: 100% !important;
+      min-height: 260px !important;
+      position: relative !important;
+      background-color: #000 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 0.5rem !important;
+      overflow: hidden !important;
+    }
     #camera-viewport video {
       width: 100% !important;
       height: 100% !important;
+      min-height: 260px !important;
       object-fit: cover !important;
-      border-radius: 0.5rem;
+      border-radius: 0.5rem !important;
+      display: block !important;
+    }
+    #camera-viewport__scan_region {
+      min-height: 260px !important;
     }
   </style>
 </head>
@@ -454,7 +470,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-slate-800">Customer Directory & Dues</h2>
-          <p class="text-[11px] sm:text-xs text-slate-500">Track customers and settle outstanding balances</p>
+          <p class="text-[11px] text-slate-500">Track customers and settle outstanding balances</p>
         </div>
         <input type="text" id="customer-search" oninput="renderCustomers()" placeholder="Search name or mobile..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
       </div>
@@ -937,110 +953,129 @@
       return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
     }
 
-    // HIGH-RES CAMERA SCANNER (1080p + Autofocus for Tiny 2D Pharma Matrices)
-    async function startCameraScanner(target) {
-      activeScanTarget = target;
-      document.getElementById('scanner-modal').classList.remove('hidden');
-      document.getElementById('scanner-status').innerText = 'Initializing HD camera...';
-
+    // STOP CAMERA SCANNER & FLUSH VIDEO TRACKS
+    async function stopCameraScanner() {
+      const status = document.getElementById('scanner-status');
       if (qrEngine) {
-        try { await qrEngine.stop(); } catch(e) {}
+        try {
+          if (qrEngine.isScanning) {
+            await qrEngine.stop();
+          }
+          qrEngine.clear();
+        } catch (err) {
+          console.warn('Scanner stop error:', err);
+        }
         qrEngine = null;
       }
 
-      // Enable native hardware BarcodeDetector engine if supported
+      // Hard-kill any stray video tracks that might be locking the sensor
+      const viewport = document.getElementById('camera-viewport');
+      if (viewport) {
+        const videos = viewport.querySelectorAll('video');
+        videos.forEach(v => {
+          if (v.srcObject) {
+            v.srcObject.getTracks().forEach(track => track.stop());
+            v.srcObject = null;
+          }
+        });
+        viewport.innerHTML = '';
+      }
+
+      document.getElementById('scanner-modal').classList.add('hidden');
+      if (status) status.innerText = 'Camera stopped.';
+    }
+
+    // CAMERA SCANNER (Zero-dimension & Black screen fix)
+    async function startCameraScanner(target) {
+      activeScanTarget = target;
+      const modal = document.getElementById('scanner-modal');
+      const status = document.getElementById('scanner-status');
+      const viewport = document.getElementById('camera-viewport');
+
+      // 1. Show modal FIRST so browser calculates true DOM layout dimensions
+      modal.classList.remove('hidden');
+      viewport.innerHTML = '';
+      status.innerText = 'Requesting camera access...';
+
+      // 2. Clean up any previous engine instances
+      if (qrEngine) {
+        try {
+          if (qrEngine.isScanning) await qrEngine.stop();
+          qrEngine.clear();
+        } catch (e) {}
+        qrEngine = null;
+      }
+
+      // 3. Small tick to allow browser DOM reflow after unhiding the modal
+      await new Promise(resolve => setTimeout(resolve, 80));
+
       qrEngine = new Html5Qrcode('camera-viewport', {
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
-        }
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        verbose: false
       });
 
-      // 1. High-resolution 1080p constraint + continuous autofocus
-      const cameraConfig = {
-        facingMode: 'environment',
-        width: { ideal: 1920, min: 1280 },
-        height: { ideal: 1080, min: 720 },
-        focusMode: 'continuous',
-        advanced: [{ focusMode: 'continuous' }]
-      };
-
-      // 2. Full frame format decoder with DataMatrix explicitly prioritised
       const scanConfig = {
-        fps: 15,
+        fps: 20,
+        qrbox: (w, h) => {
+          const width = Math.floor(w * 0.85);
+          const height = Math.floor(h * 0.7);
+          return { width: Math.max(width, 180), height: Math.max(height, 140) };
+        },
         formatsToSupport: [
-          Html5QrcodeSupportedFormats.DATA_MATRIX, // Square matrix on pharma strips
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
           Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
           Html5QrcodeSupportedFormats.CODE_128,
           Html5QrcodeSupportedFormats.CODE_39,
           Html5QrcodeSupportedFormats.UPC_A
         ]
       };
 
+      const handleSuccess = (decodedText) => {
+        playBeep();
+        stopCameraScanner();
+
+        if (activeScanTarget === 'pos') {
+          addItemToCartByBarcode(decodedText);
+        } else {
+          const data = parsePharmaStripCode(decodedText);
+          document.getElementById('form-barcode').value = data.barcode || decodedText;
+          if (data.batchNumber) document.getElementById('form-batch').value = data.batchNumber;
+          if (data.expiryDate) document.getElementById('form-expiry').value = data.expiryDate;
+          checkExistingMedicine(data.barcode || decodedText);
+        }
+      };
+
       try {
-        await qrEngine.start(
-          cameraConfig,
-          scanConfig,
-          (decodedText) => {
-            playBeep();
-            stopCameraScanner();
+        // Query available video devices
+        const devices = await Html5Qrcode.getCameras();
 
-            if (activeScanTarget === 'pos') {
-              addItemToCartByBarcode(decodedText);
-            } else {
-              const data = parsePharmaStripCode(decodedText);
-              
-              document.getElementById('form-barcode').value = data.barcode || decodedText;
-              if (data.batchNumber) {
-                document.getElementById('form-batch').value = data.batchNumber;
-              }
-              if (data.expiryDate) {
-                document.getElementById('form-expiry').value = data.expiryDate;
-              }
-
-              checkExistingMedicine(data.barcode || decodedText);
-            }
-          },
-          () => {}
-        );
-        document.getElementById('scanner-status').innerText = 'Hold camera ~12-15 cm away under steady light.';
-      } catch (err) {
-        console.warn('Falling back to standard camera configuration:', err);
-        try {
+        if (devices && devices.length > 0) {
+          // Prefer back/rear camera
+          const backCamera = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[devices.length - 1];
+          
+          await qrEngine.start(
+            backCamera.id,
+            scanConfig,
+            handleSuccess,
+            () => {}
+          );
+        } else {
+          // Fallback to environment facing constraint if device labels are unavailable
           await qrEngine.start(
             { facingMode: 'environment' },
             scanConfig,
-            (decodedText) => {
-              playBeep();
-              stopCameraScanner();
-              if (activeScanTarget === 'pos') {
-                addItemToCartByBarcode(decodedText);
-              } else {
-                const data = parsePharmaStripCode(decodedText);
-                document.getElementById('form-barcode').value = data.barcode || decodedText;
-                if (data.batchNumber) document.getElementById('form-batch').value = data.batchNumber;
-                if (data.expiryDate) document.getElementById('form-expiry').value = data.expiryDate;
-                checkExistingMedicine(data.barcode || decodedText);
-              }
-            },
+            handleSuccess,
             () => {}
           );
-          document.getElementById('scanner-status').innerText = 'Hold camera ~12-15 cm away.';
-        } catch (fallbackErr) {
-          document.getElementById('scanner-status').innerText = 'Camera access blocked or not supported.';
         }
-      }
-    }
 
-    async function stopCameraScanner() {
-      if (qrEngine) {
-        try {
-          await qrEngine.stop();
-          qrEngine.clear();
-        } catch (err) {}
-        qrEngine = null;
+        status.innerText = 'Hold camera ~12-15 cm away under steady light.';
+      } catch (err) {
+        console.error('Camera initialization failed:', err);
+        status.innerText = 'Could not stream camera. Try refreshing or use manual entry / Gen ID.';
       }
-      document.getElementById('scanner-modal').classList.add('hidden');
     }
 
     function playBeep() {
