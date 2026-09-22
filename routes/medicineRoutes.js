@@ -44,32 +44,42 @@ router.get('/alerts/expiring', async (req, res) => {
 });
 
 // 4. Add or Restock Medicine (with Cost Price & Selling Price)
+// POST /api/medicines/upsert - Support single or multiple barcodes
 router.post('/upsert', async (req, res) => {
   try {
-    const { name, genericName, barcode, batchNumber, quantity, costPrice, price, expiryDate, rackLocation } = req.body;
+    const { barcodes, barcode, name, genericName, batchNumber, quantity, costPrice, price, expiryDate, rackLocation } = req.body;
 
-    if (!name || !barcode || !batchNumber || quantity === undefined || costPrice === undefined || !price || !expiryDate) {
-      return res.status(400).json({ error: 'All marked fields (*) are required.' });
+    const codeList = Array.isArray(barcodes) && barcodes.length > 0 
+      ? barcodes 
+      : (barcode ? [barcode] : []);
+
+    if (!codeList.length || !name || !batchNumber || quantity === undefined || costPrice === undefined || !price || !expiryDate) {
+      return res.status(400).json({ error: 'At least one barcode and all required fields (*) must be provided.' });
     }
 
-    const updated = await Medicine.findOneAndUpdate(
-      { barcode: barcode.trim() },
-      {
-        $set: {
-          name: name.trim(),
-          genericName: (genericName || '').trim(),
-          batchNumber: batchNumber.trim(),
-          costPrice: Number(costPrice),
-          price: Number(price),
-          expiryDate: new Date(expiryDate),
-          rackLocation: (rackLocation || 'General Shelf').trim()
-        },
-        $inc: { quantity: Number(quantity) }
-      },
-      { new: true, upsert: true, runValidators: true }
+    // Save/update each barcode entry under this batch
+    const results = await Promise.all(
+      codeList.map(code => 
+        Medicine.findOneAndUpdate(
+          { barcode: code.trim() },
+          {
+            $set: {
+              name: name.trim(),
+              genericName: (genericName || '').trim(),
+              batchNumber: batchNumber.trim(),
+              costPrice: Number(costPrice),
+              price: Number(price),
+              expiryDate: new Date(expiryDate),
+              rackLocation: (rackLocation || 'General Shelf').trim()
+            },
+            $inc: { quantity: Number(quantity) }
+          },
+          { new: true, upsert: true, runValidators: true }
+        )
+      )
     );
 
-    res.status(200).json(updated);
+    res.status(200).json({ success: true, count: results.length, medicines: results });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
