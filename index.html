@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>PharmaCare Management & POS</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- HTML5 QR / Barcode Scanner -->
+  <!-- HTML5 Barcode / QR Scanner -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <!-- Client-side PDF Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <!-- OCR Text Scanner for Medicine Packages -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
-    #camera-viewport video {
+    #camera-viewport video, #ocr-video {
       width: 100% !important;
       height: 100% !important;
       object-fit: cover !important;
@@ -21,7 +23,7 @@
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen font-sans pb-20 sm:pb-8">
 
-  <!-- Navigation Header -->
+  <!-- Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-14 sm:h-16">
       <div class="flex items-center space-x-2.5">
@@ -33,7 +35,7 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4">
-        <!-- Notification Bell -->
+        <!-- Expiry Alerts Dropdown -->
         <div class="relative">
           <button onclick="toggleNotifications()" aria-label="Notifications" class="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition">
             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +44,6 @@
             <span id="notif-badge" class="hidden absolute top-1 right-1 bg-rose-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
           </button>
 
-          <!-- Dropdown Window -->
           <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-72 sm:w-96 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden">
             <div class="p-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
               <span class="font-bold text-xs sm:text-sm text-slate-800">Expiry Notifications</span>
@@ -113,6 +114,7 @@
           </div>
         </div>
 
+        <!-- Previous Due Banner -->
         <div id="pos-due-alert" class="hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs flex justify-between items-center text-amber-900">
           <div>
             <span class="font-bold">Existing Outstanding Balance:</span>
@@ -240,10 +242,11 @@
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Medicine</h2>
             <p class="text-[10px] text-slate-500">Auto-fetches from medical database on scan</p>
           </div>
-          <button onclick="startCameraScanner('inventory')" class="text-xs bg-emerald-50 text-emerald-700 active:bg-emerald-100 font-semibold px-2.5 py-1.5 rounded transition">Scan Code</button>
+          <button onclick="startCameraScanner('inventory')" class="text-xs bg-emerald-50 text-emerald-700 active:bg-emerald-100 font-semibold px-2.5 py-1.5 rounded transition">Scan Barcode</button>
         </div>
 
         <form id="medicine-form" onsubmit="handleSaveMedicine(event)" class="space-y-3 sm:space-y-4">
+          <!-- Barcode Input -->
           <div>
             <div class="flex justify-between items-center mb-1">
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Barcode *</label>
@@ -259,14 +262,34 @@
             />
           </div>
 
-          <div>
-            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
-            <input type="text" id="form-name" required placeholder="e.g. Paracetamol 500mg" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
-          </div>
+          <!-- Medicine Details & Package OCR Scanner -->
+          <div class="space-y-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-slate-700">Product Identification</span>
+              <button 
+                type="button" 
+                onclick="startLabelOcrScanner()" 
+                class="inline-flex items-center gap-1 text-xs bg-emerald-100 hover:bg-emerald-200 active:bg-emerald-300 text-emerald-800 font-bold px-2.5 py-1 rounded-md transition"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Scan Label (OCR)
+              </button>
+            </div>
 
-          <div>
-            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Generic / Salt Composition</label>
-            <input type="text" id="form-generic" placeholder="e.g. Acetaminophen" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+            <div id="ocr-status-box" class="hidden text-[11px] p-2 rounded border"></div>
+
+            <div>
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
+              <input type="text" id="form-name" required placeholder="e.g. Paracetamol 500mg" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Generic / Salt Composition</label>
+              <input type="text" id="form-generic" placeholder="e.g. Acetaminophen / Paracetamol IP" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -313,7 +336,7 @@
               </div>
             </div>
 
-            <!-- Green Profit Margin Indicator -->
+            <!-- Profit Margin Indicator -->
             <div id="profit-margin-container" class="hidden text-[11px] font-semibold flex items-center gap-1.5 pt-0.5">
               <span id="profit-margin-text"></span>
             </div>
@@ -405,7 +428,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-slate-800">Customer Directory & Dues</h2>
-          <p class="text-[11px] sm:text-xs text-slate-500">Track customers and settle outstanding balances</p>
+          <p class="text-[11px] text-slate-500">Track customers and settle outstanding balances</p>
         </div>
         <input type="text" id="customer-search" oninput="renderCustomers()" placeholder="Search name or mobile..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
       </div>
@@ -449,7 +472,7 @@
     </button>
   </div>
 
-  <!-- Camera Scanner Modal -->
+  <!-- Camera Barcode Scanner Modal -->
   <div id="scanner-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div class="bg-white rounded-xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 shadow-2xl relative">
       <div class="flex justify-between items-center mb-3">
@@ -458,6 +481,37 @@
       </div>
       <div id="camera-viewport" class="w-full bg-black rounded-lg overflow-hidden relative aspect-square sm:aspect-video flex items-center justify-center"></div>
       <p id="scanner-status" class="text-[11px] sm:text-xs text-center text-slate-500 mt-3">Align barcode within the camera view.</p>
+    </div>
+  </div>
+
+  <!-- Package Label OCR Scanner Modal -->
+  <div id="ocr-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="bg-white rounded-xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 shadow-2xl relative space-y-4">
+      <div class="flex justify-between items-center">
+        <div>
+          <h3 class="font-bold text-sm sm:text-base text-slate-800">Scan Medicine Package</h3>
+          <p class="text-[11px] text-slate-500">Hold medicine label steadily in good light</p>
+        </div>
+        <button onclick="stopLabelOcrScanner()" class="text-slate-400 hover:text-slate-600 p-1 text-2xl font-bold leading-none">&times;</button>
+      </div>
+
+      <div class="relative w-full aspect-video sm:aspect-square bg-black rounded-lg overflow-hidden flex items-center justify-center">
+        <video id="ocr-video" autoplay playsinline class="w-full h-full object-cover"></video>
+        <canvas id="ocr-canvas" class="hidden"></canvas>
+        <div class="absolute inset-x-6 inset-y-12 border-2 border-dashed border-emerald-400/80 rounded-lg pointer-events-none"></div>
+      </div>
+
+      <div id="ocr-modal-status" class="text-xs text-center text-slate-500 font-medium">Position the brand name & salt text within the frame</div>
+
+      <div class="flex gap-2">
+        <button type="button" onclick="captureAndRecognizeText()" id="ocr-snap-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-2.5 rounded-lg text-xs transition shadow-sm flex items-center justify-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+          Capture & Extract
+        </button>
+        <button type="button" onclick="cancelOcrToManual()" class="px-4 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-lg text-xs transition">
+          Enter Manually
+        </button>
+      </div>
     </div>
   </div>
 
@@ -471,6 +525,7 @@
     let qrEngine = null;
     let activeScanTarget = 'pos';
     let currentCustomerDue = 0;
+    let ocrStream = null;
 
     // NOTIFICATIONS
     function toggleNotifications() {
@@ -581,7 +636,7 @@
       if (tab === 'customers') fetchCustomers();
     }
 
-    // LIVE PROFIT MARGIN CALCULATOR
+    // PROFIT MARGIN CALCULATOR
     function updateProfitMarginDisplay() {
       const cost = parseFloat(document.getElementById('form-cost-price')?.value);
       const sell = parseFloat(document.getElementById('form-price')?.value);
@@ -614,6 +669,131 @@
           </svg>
           Loss Warning: ${marginPercentage}% (-₹${Math.abs(profit).toFixed(2)}/unit)
         `;
+      }
+    }
+
+    // OCR SCANNER LOGIC
+    async function startLabelOcrScanner() {
+      const modal = document.getElementById('ocr-modal');
+      const video = document.getElementById('ocr-video');
+      const status = document.getElementById('ocr-modal-status');
+      const snapBtn = document.getElementById('ocr-snap-btn');
+
+      modal.classList.remove('hidden');
+      snapBtn.disabled = false;
+      status.innerText = 'Position the brand name & salt text within the frame';
+      status.className = 'text-xs text-center text-slate-500 font-medium';
+
+      try {
+        ocrStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+        video.srcObject = ocrStream;
+      } catch (err) {
+        console.error('Camera access error:', err);
+        status.innerText = 'Camera access blocked. Please enter details manually.';
+        status.className = 'text-xs text-center text-rose-600 font-bold';
+      }
+    }
+
+    function stopLabelOcrScanner() {
+      if (ocrStream) {
+        ocrStream.getTracks().forEach(track => track.stop());
+        ocrStream = null;
+      }
+      document.getElementById('ocr-modal').classList.add('hidden');
+    }
+
+    function cancelOcrToManual() {
+      stopLabelOcrScanner();
+      showOcrStatus('Scan cancelled. Please enter medicine name and salt manually.', 'warning');
+      document.getElementById('form-name').focus();
+    }
+
+    function showOcrStatus(message, type) {
+      const box = document.getElementById('ocr-status-box');
+      box.classList.remove('hidden');
+      if (type === 'success') {
+        box.className = 'text-[11px] p-2 rounded border bg-emerald-50 border-emerald-200 text-emerald-800 font-medium';
+        box.innerText = '✓ ' + message;
+      } else {
+        box.className = 'text-[11px] p-2 rounded border bg-amber-50 border-amber-200 text-amber-800 font-medium';
+        box.innerText = '⚠ ' + message;
+      }
+    }
+
+    async function captureAndRecognizeText() {
+      const video = document.getElementById('ocr-video');
+      const canvas = document.getElementById('ocr-canvas');
+      const status = document.getElementById('ocr-modal-status');
+      const snapBtn = document.getElementById('ocr-snap-btn');
+
+      if (!video.videoWidth) {
+        status.innerText = 'Camera still loading. Please wait...';
+        return;
+      }
+
+      snapBtn.disabled = true;
+      status.innerText = 'Analyzing package text with OCR...';
+      status.className = 'text-xs text-center text-blue-600 font-bold animate-pulse';
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      try {
+        const worker = await Tesseract.createWorker('eng');
+        const ret = await worker.recognize(canvas);
+        await worker.terminate();
+
+        const fullText = ret.data.text || '';
+        stopLabelOcrScanner();
+        parseMedicineOcrText(fullText);
+      } catch (err) {
+        console.error('OCR Processing error:', err);
+        stopLabelOcrScanner();
+        showOcrStatus('Scanning failed to detect text. Please type manually.', 'warning');
+        document.getElementById('form-name').focus();
+      }
+    }
+
+    function parseMedicineOcrText(rawText) {
+      const lines = rawText
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 2 && !/^(mfg|exp|batch|b\.no|m\.r\.p|rs|date|lic)/i.test(l));
+
+      if (lines.length === 0) {
+        showOcrStatus('Could not read package label clearly. Please enter details manually.', 'warning');
+        document.getElementById('form-name').focus();
+        return;
+      }
+
+      let detectedName = '';
+      let detectedSalt = '';
+
+      const saltRegex = /(paracetamol|hydrochloride|maleate|potassium|sodium|ip|bp|usp|tablet|capsule|syrup|ointment|amoxicillin|clavulanate|azithromycin|pantoprazole|omeprazole|metformin|amlodipine|cetirizine|ibuprofen)/i;
+
+      for (const line of lines) {
+        if (!detectedSalt && saltRegex.test(line)) {
+          detectedSalt = line;
+        } else if (!detectedName && line.length >= 3 && !saltRegex.test(line)) {
+          detectedName = line;
+        }
+      }
+
+      if (!detectedName && lines.length > 0) detectedName = lines[0];
+      if (!detectedSalt && lines.length > 1) detectedSalt = lines[1];
+
+      if (detectedName) document.getElementById('form-name').value = detectedName;
+      if (detectedSalt) document.getElementById('form-generic').value = detectedSalt;
+
+      if (detectedName || detectedSalt) {
+        showOcrStatus('Extracted from label scan! Review or edit details as needed.', 'success');
+      } else {
+        showOcrStatus('Text scan inconclusive. Please fill fields manually.', 'warning');
+        document.getElementById('form-name').focus();
       }
     }
 
@@ -699,7 +879,7 @@
       return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
     }
 
-    // AUTOMATED MEDICAL API LOOKUP ON SCAN / ENTER
+    // MEDICAL API LOOKUP ON SCAN / ENTER
     async function fetchMedicineInfo(barcode) {
       const cleanBarcode = barcode.trim();
       if (!cleanBarcode) return;
@@ -743,7 +923,7 @@
       }
     }
 
-    // CAMERA SCANNER
+    // BARCODE CAMERA SCANNER
     async function startCameraScanner(target) {
       activeScanTarget = target;
       document.getElementById('scanner-modal').classList.remove('hidden');
@@ -816,7 +996,7 @@
       } catch(e) {}
     }
 
-    // GLOBAL USB SCANNER INTERCEPTOR
+    // GLOBAL HARDWARE USB SCANNER LISTENER
     let barcodeBuffer = '';
     let lastKeyTime = Date.now();
 
@@ -1109,7 +1289,7 @@
       const boxHeight = 52;
       const colWidth = (pageWidth - 80 - 15) / 2;
 
-      // Customer Card
+      // Customer Details Card
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(40, boxY, colWidth, boxHeight, 4, 4, 'F');
       doc.setDrawColor(226, 232, 240);
@@ -1130,7 +1310,7 @@
       doc.setTextColor(71, 85, 105);
       doc.text(`Contact: ${billData.customerPhone || 'Not Provided'}`, 50, boxY + 42);
 
-      // Invoice Info Card
+      // Invoice Details Card
       const rightX = 40 + colWidth + 15;
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(rightX, boxY, colWidth, boxHeight, 4, 4, 'F');
@@ -1156,7 +1336,7 @@
       });
       doc.text(`Date: ${formattedDate}`, rightX + 10, boxY + 42);
 
-      // Items Table
+      // Itemized Table
       const tableRows = billData.items.map((it, idx) => {
         let expDisplay = it.expiryDate || 'N/A';
         if (it.expiryDate && it.expiryDate.includes('-')) {
@@ -1328,7 +1508,6 @@
         return;
       }
 
-      // Desktop Rows
       if (tbody) {
         tbody.innerHTML = filtered.map(item => `
           <tr class="hover:bg-slate-50">
@@ -1351,7 +1530,6 @@
         `).join('');
       }
 
-      // Mobile Cards
       if (mobileList) {
         mobileList.innerHTML = filtered.map(item => `
           <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
@@ -1409,6 +1587,7 @@
         document.getElementById('medicine-form').reset();
         document.getElementById('barcode-api-status').innerText = '';
         document.getElementById('profit-margin-container').classList.add('hidden');
+        document.getElementById('ocr-status-box').classList.add('hidden');
         await fetchInventory();
         alert('Stock updated successfully!');
       } catch (err) {
