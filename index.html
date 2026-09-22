@@ -69,7 +69,7 @@
         <!-- Desktop Navigation Tabs -->
         <nav class="hidden sm:flex bg-slate-100 p-1 rounded-lg">
           <button id="tab-btn-pos" onclick="switchTab('pos')" class="px-3.5 py-1.5 text-xs font-bold rounded-md bg-white text-emerald-700 shadow-sm transition">POS</button>
-          <button id="tab-btn-inventory" onclick="switchTab('inventory')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Restock</button>
+          <button id="tab-btn-inventory" onclick="switchTab('inventory')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Stock & Batch</button>
           <button id="tab-btn-medicines" onclick="switchTab('medicines')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Medicine Lookup</button>
           <button id="tab-btn-bills" onclick="switchTab('bills')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Invoices</button>
           <button id="tab-btn-customers" onclick="switchTab('customers')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Customers & Dues</button>
@@ -100,7 +100,7 @@
         <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Point of Sale</h2>
-            <p class="text-[11px] sm:text-xs text-slate-500">Scan barcodes, 2D matrices, or search medicines by name and batch</p>
+            <p class="text-[11px] sm:text-xs text-slate-500">Scan codes or search medicines by name and batch</p>
           </div>
           <button onclick="startCameraScanner('pos')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" /></svg>
@@ -110,7 +110,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 sm:mb-6">
           <div>
-            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Scan Barcode (Press Enter)</label>
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Scan / Type Barcode (Enter)</label>
             <input 
               type="text" 
               id="pos-barcode-input" 
@@ -279,24 +279,29 @@
       </div>
     </section>
 
-    <!-- ================= TAB 2: INVENTORY & RESTOCK ================= -->
+    <!-- ================= TAB 2: INVENTORY & STOCKING ================= -->
     <section id="view-inventory" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
           <div>
-            <h2 class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Batch</h2>
-            <p class="text-[10px] text-slate-500">Scan or add multiple barcodes under one batch</p>
+            <h2 id="stock-form-title" class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Batch</h2>
+            <p id="stock-form-subtitle" class="text-[10px] text-slate-500">Scan barcodes (optional) or type details directly</p>
           </div>
-          <button onclick="startCameraScanner('inventory_multi')" class="text-xs bg-emerald-50 text-emerald-700 active:bg-emerald-100 font-semibold px-2.5 py-1.5 rounded transition">
-            Scan Multiple (Camera)
+          <button type="button" onclick="resetStockForm()" id="stock-cancel-edit-btn" class="hidden text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded">
+            Reset
           </button>
         </div>
 
         <form id="medicine-form" onsubmit="handleSaveMedicine(event)" class="space-y-3 sm:space-y-4">
-          <!-- MULTI-BARCODE TAGGING CONTAINER -->
-          <div>
+          <input type="hidden" id="form-medicine-id" value="" />
+          <input type="hidden" id="form-submit-mode" value="restock" />
+
+          <!-- OPTIONAL MULTI-BARCODE TAGGING -->
+          <div id="barcode-section-block">
             <div class="flex justify-between items-center mb-1">
-              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Barcodes under this batch *</label>
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">
+                Barcodes <span class="text-slate-400 font-normal">(Optional — auto-generated if blank)</span>
+              </label>
               <span id="barcode-status" class="text-[10px] font-medium text-slate-400"></span>
             </div>
             
@@ -305,7 +310,7 @@
                 type="text" 
                 id="form-barcode-input" 
                 onkeydown="handleBarcodeEntry(event)" 
-                placeholder="Scan or type barcode + Enter to add" 
+                placeholder="Scan or type code + Enter" 
                 class="w-full border border-slate-300 rounded-lg p-2 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 font-mono" 
               />
               <button 
@@ -317,17 +322,17 @@
               </button>
               <button 
                 type="button" 
-                onclick="generateCustomMedicineCode()" 
-                title="Generate custom barcode ID"
+                onclick="startCameraScanner('inventory_multi')" 
+                title="Continuous camera scan"
                 class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg whitespace-nowrap transition border border-slate-200"
               >
-                Gen ID
+                Scan (Cam)
               </button>
             </div>
 
             <!-- Visual Barcode Tag List -->
             <div id="barcode-tags-container" class="flex flex-wrap gap-1.5 mt-2 min-h-[38px] p-2 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
-              <span class="text-[11px] text-slate-400 self-center">No barcodes added yet. Scan or type above.</span>
+              <span class="text-[11px] text-slate-400 self-center">No barcodes attached. (A unique code will auto-generate).</span>
             </div>
           </div>
 
@@ -348,7 +353,7 @@
               <input type="text" id="form-batch" required placeholder="26441882" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-mono" />
             </div>
             <div>
-              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Qty Added per Barcode *</label>
+              <label id="form-qty-label" class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Quantity to Add *</label>
               <input type="number" id="form-qty" required min="1" value="1" placeholder="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
@@ -368,7 +373,7 @@
                   placeholder="10.00" 
                   class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-semibold" 
                 />
-                <span class="text-[9px] text-slate-400">Purchase / Dealer price</span>
+                <span class="text-[9px] text-slate-400">Purchase price</span>
               </div>
               <div>
                 <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Selling Price (₹) *</label>
@@ -403,7 +408,7 @@
             </div>
           </div>
 
-          <button type="submit" class="w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm">
+          <button type="submit" id="form-submit-btn" class="w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm">
             Save / Update Batch Stock
           </button>
         </form>
@@ -413,10 +418,10 @@
       <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
           <div>
-            <h2 class="text-base sm:text-lg font-bold text-slate-800">Current Stock</h2>
-            <p class="text-[11px] text-slate-500">Sorted by nearest expiration</p>
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">Current Stock Batches</h2>
+            <p class="text-[11px] text-slate-500">Click Edit to modify details or Restock to add more items</p>
           </div>
-          <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search name or barcode..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
+          <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search name, batch, or code..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
         </div>
 
         <div class="hidden sm:block overflow-x-auto">
@@ -424,12 +429,12 @@
             <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
               <tr>
                 <th class="p-3">Name</th>
+                <th class="p-3">Batch</th>
                 <th class="p-3">Barcode</th>
                 <th class="p-3">Stock</th>
                 <th class="p-3">Cost / Selling</th>
-                <th class="p-3">Expiry Status</th>
-                <th class="p-3">Rack</th>
-                <th class="p-3 text-center">Action</th>
+                <th class="p-3">Expiry</th>
+                <th class="p-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody id="inventory-table-body" class="divide-y divide-slate-100">
@@ -490,7 +495,7 @@
                 <th class="p-3">Medicine & Salt</th>
                 <th class="p-3">Batch No</th>
                 <th class="p-3">Barcode</th>
-                <th class="p-3">Stock Available</th>
+                <th class="p-3">Stock</th>
                 <th class="p-3">Pricing (Cost / Sell)</th>
                 <th class="p-3">Expiry Date</th>
                 <th class="p-3 text-center">Action</th>
@@ -576,7 +581,7 @@
     </button>
     <button id="mobile-nav-inventory" onclick="switchTab('inventory')" class="flex flex-col items-center text-slate-500 font-semibold text-[10px]">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-      Restock
+      Stock
     </button>
     <button id="mobile-nav-medicines" onclick="switchTab('medicines')" class="flex flex-col items-center text-slate-500 font-semibold text-[10px]">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -654,9 +659,12 @@
         </div>
       </div>
 
-      <div class="pt-2">
-        <button onclick="closeMedicineDetailsModal()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg text-xs transition">
-          Close Details
+      <div class="flex gap-2 pt-2">
+        <button id="modal-edit-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition">
+          Edit / Restock
+        </button>
+        <button onclick="closeMedicineDetailsModal()" class="px-4 py-2.5 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition">
+          Close
         </button>
       </div>
     </div>
@@ -785,6 +793,154 @@
       if (tab === 'customers') fetchCustomers();
     }
 
+    // MULTI-BARCODE TAGGING & BATCH MANAGEMENT
+    function handleBarcodeEntry(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addBarcodeFromInput();
+      }
+    }
+
+    function addBarcodeFromInput() {
+      const input = document.getElementById('form-barcode-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      const parsed = parsePharmaStripCode(val);
+      const barcodeToAdd = parsed.barcode || val;
+
+      addBarcodeTag(barcodeToAdd);
+
+      if (parsed.batchNumber && !document.getElementById('form-batch').value) {
+        document.getElementById('form-batch').value = parsed.batchNumber;
+      }
+      if (parsed.expiryDate && !document.getElementById('form-expiry').value) {
+        document.getElementById('form-expiry').value = parsed.expiryDate;
+      }
+
+      checkExistingMedicine(barcodeToAdd);
+      input.value = '';
+      input.focus();
+    }
+
+    function addBarcodeTag(code) {
+      const clean = code.trim();
+      if (!clean) return;
+
+      if (!stagedBarcodes.includes(clean)) {
+        stagedBarcodes.push(clean);
+      }
+      renderBarcodeTags();
+    }
+
+    function removeBarcodeTag(code) {
+      stagedBarcodes = stagedBarcodes.filter(c => c !== code);
+      renderBarcodeTags();
+    }
+
+    function renderBarcodeTags() {
+      const container = document.getElementById('barcode-tags-container');
+      const statusBadge = document.getElementById('barcode-status');
+
+      if (stagedBarcodes.length === 0) {
+        container.innerHTML = '<span class="text-[11px] text-slate-400 self-center">No barcodes attached. (A unique code will auto-generate).</span>';
+        statusBadge.innerText = '';
+        return;
+      }
+
+      statusBadge.innerText = `${stagedBarcodes.length} barcode(s) attached`;
+      statusBadge.className = 'text-[10px] font-bold text-emerald-600';
+
+      container.innerHTML = stagedBarcodes.map(c => `
+        <span class="inline-flex items-center gap-1 bg-white border border-slate-300 text-slate-800 text-[11px] font-mono px-2 py-0.5 rounded shadow-sm">
+          <span>${c}</span>
+          <button type="button" onclick="removeBarcodeTag('${c}')" class="text-rose-500 hover:text-rose-700 font-bold ml-0.5">&times;</button>
+        </span>
+      `).join('');
+    }
+
+    // FORM MODE CONTROLS: EDITING & RESTOCKING
+    function resetStockForm() {
+      document.getElementById('medicine-form').reset();
+      document.getElementById('form-medicine-id').value = '';
+      document.getElementById('form-submit-mode').value = 'restock';
+
+      document.getElementById('stock-form-title').innerText = 'Add / Restock Batch';
+      document.getElementById('stock-form-subtitle').innerText = 'Scan barcodes (optional) or type details directly';
+      document.getElementById('form-qty-label').innerText = 'Quantity to Add *';
+      document.getElementById('form-submit-btn').innerText = 'Save / Update Batch Stock';
+      document.getElementById('form-submit-btn').className = 'w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm';
+      document.getElementById('stock-cancel-edit-btn').classList.add('hidden');
+      document.getElementById('profit-margin-container').classList.add('hidden');
+
+      stagedBarcodes = [];
+      renderBarcodeTags();
+    }
+
+    // Edit an existing medicine batch's parameters
+    function loadMedicineForEdit(med) {
+      switchTab('inventory');
+
+      document.getElementById('form-medicine-id').value = med._id;
+      document.getElementById('form-submit-mode').value = 'edit';
+
+      document.getElementById('stock-form-title').innerText = `Edit: ${med.name}`;
+      document.getElementById('stock-form-subtitle').innerText = `Editing Batch [${med.batchNumber}]`;
+      document.getElementById('form-qty-label').innerText = 'Current Total Stock (Overwrite)';
+      document.getElementById('form-submit-btn').innerText = 'Save Changes';
+      document.getElementById('form-submit-btn').className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm';
+      document.getElementById('stock-cancel-edit-btn').classList.remove('hidden');
+
+      document.getElementById('form-name').value = med.name || '';
+      document.getElementById('form-generic').value = med.genericName || '';
+      document.getElementById('form-batch').value = med.batchNumber || '';
+      document.getElementById('form-qty').value = med.quantity;
+      document.getElementById('form-cost-price').value = med.costPrice;
+      document.getElementById('form-price').value = med.price;
+      document.getElementById('form-rack').value = med.rackLocation || '';
+
+      if (med.expiryDate) {
+        document.getElementById('form-expiry').value = med.expiryDate.split('T')[0];
+      }
+
+      stagedBarcodes = med.barcode ? [med.barcode] : [];
+      renderBarcodeTags();
+      updateProfitMarginDisplay();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Add more stock to an existing batch
+    function loadMedicineForRestock(med) {
+      switchTab('inventory');
+
+      document.getElementById('form-medicine-id').value = med._id;
+      document.getElementById('form-submit-mode').value = 'restock';
+
+      document.getElementById('stock-form-title').innerText = `Restock: ${med.name}`;
+      document.getElementById('stock-form-subtitle').innerText = `Adding fresh stock to Batch [${med.batchNumber}] (Current: ${med.quantity} units)`;
+      document.getElementById('form-qty-label').innerText = 'Additional Quantity to Add *';
+      document.getElementById('form-qty').value = '10';
+      document.getElementById('form-submit-btn').innerText = `Add Fresh Stock to Batch (${med.batchNumber})`;
+      document.getElementById('form-submit-btn').className = 'w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm';
+      document.getElementById('stock-cancel-edit-btn').classList.remove('hidden');
+
+      document.getElementById('form-name').value = med.name || '';
+      document.getElementById('form-generic').value = med.genericName || '';
+      document.getElementById('form-batch').value = med.batchNumber || '';
+      document.getElementById('form-cost-price').value = med.costPrice;
+      document.getElementById('form-price').value = med.price;
+      document.getElementById('form-rack').value = med.rackLocation || '';
+
+      if (med.expiryDate) {
+        document.getElementById('form-expiry').value = med.expiryDate.split('T')[0];
+      }
+
+      stagedBarcodes = med.barcode ? [med.barcode] : [];
+      renderBarcodeTags();
+      updateProfitMarginDisplay();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     // MEDICINE DIRECTORY & DETAILS LOOKUP
     function renderMedicineDirectory() {
       const keyword = (document.getElementById('details-search-keyword')?.value || '').trim().toLowerCase();
@@ -793,14 +949,12 @@
       const safeInventory = Array.isArray(inventory) ? inventory : [];
 
       const filtered = safeInventory.filter(item => {
-        // Keyword match across Name, Generic/Salt, Batch, or Barcode
         const matchesKeyword = !keyword || 
           (item.name && item.name.toLowerCase().includes(keyword)) ||
           (item.genericName && item.genericName.toLowerCase().includes(keyword)) ||
           (item.batchNumber && item.batchNumber.toLowerCase().includes(keyword)) ||
           (item.barcode && item.barcode.toLowerCase().includes(keyword));
 
-        // Date of Purchase / Entry match
         let matchesDate = true;
         if (dateFilter) {
           const createdAtDate = item.createdAt ? item.createdAt.split('T')[0] : '';
@@ -838,9 +992,15 @@
               <span class="font-bold text-emerald-700">Sell: ₹${Number(item.price).toFixed(2)}</span>
             </td>
             <td class="p-3">${getExpiryBadge(item.expiryDate)}</td>
-            <td class="p-3 text-center">
-              <button onclick='openMedicineDetailsModal(${JSON.stringify(item)})' class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded">
-                View Full Info
+            <td class="p-3 text-center space-x-1">
+              <button onclick='openMedicineDetailsModal(${JSON.stringify(item)})' class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded">
+                Info
+              </button>
+              <button onclick='loadMedicineForRestock(${JSON.stringify(item)})' class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded">
+                + Restock
+              </button>
+              <button onclick='loadMedicineForEdit(${JSON.stringify(item)})' class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
+                Edit
               </button>
             </td>
           </tr>
@@ -863,9 +1023,17 @@
             </div>
             <div class="flex justify-between items-center text-[11px] pt-1">
               <span class="text-slate-500">Sell: <b class="text-emerald-700">₹${Number(item.price).toFixed(2)}</b></span>
-              <button onclick='openMedicineDetailsModal(${JSON.stringify(item)})' class="text-emerald-600 text-xs font-bold underline">
-                View Details
-              </button>
+              <div class="space-x-1">
+                <button onclick='loadMedicineForRestock(${JSON.stringify(item)})' class="text-emerald-700 text-xs font-bold px-2 py-0.5 bg-emerald-50 rounded">
+                  + Add
+                </button>
+                <button onclick='loadMedicineForEdit(${JSON.stringify(item)})' class="text-blue-700 text-xs font-bold px-2 py-0.5 bg-blue-50 rounded">
+                  Edit
+                </button>
+                <button onclick='openMedicineDetailsModal(${JSON.stringify(item)})' class="text-slate-600 text-xs font-bold underline ml-1">
+                  Info
+                </button>
+              </div>
             </div>
           </div>
         `).join('');
@@ -886,79 +1054,17 @@
       const purchaseDate = med.createdAt ? new Date(med.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : 'N/A';
       document.getElementById('modal-med-purchased').innerText = purchaseDate;
 
+      // Link edit button in modal
+      document.getElementById('modal-edit-btn').onclick = () => {
+        closeMedicineDetailsModal();
+        loadMedicineForRestock(med);
+      };
+
       document.getElementById('medicine-details-modal').classList.remove('hidden');
     }
 
     function closeMedicineDetailsModal() {
       document.getElementById('medicine-details-modal').classList.add('hidden');
-    }
-
-    // MULTI-BARCODE MANAGEMENT UNDER SINGLE BATCH
-    function handleBarcodeEntry(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        addBarcodeFromInput();
-      }
-    }
-
-    function addBarcodeFromInput() {
-      const input = document.getElementById('form-barcode-input');
-      const val = input.value.trim();
-      if (!val) return;
-
-      const parsed = parsePharmaStripCode(val);
-      const barcodeToAdd = parsed.barcode || val;
-
-      addBarcodeTag(barcodeToAdd);
-
-      if (parsed.batchNumber && !document.getElementById('form-batch').value) {
-        document.getElementById('form-batch').value = parsed.batchNumber;
-      }
-      if (parsed.expiryDate && !document.getElementById('form-expiry').value) {
-        document.getElementById('form-expiry').value = parsed.expiryDate;
-      }
-
-      checkExistingMedicine(barcodeToAdd);
-      input.value = '';
-      input.focus();
-    }
-
-    function addBarcodeTag(code) {
-      const clean = code.trim();
-      if (!clean) return;
-
-      if (stagedBarcodes.includes(clean)) {
-        return;
-      }
-
-      stagedBarcodes.push(clean);
-      renderBarcodeTags();
-    }
-
-    function removeBarcodeTag(code) {
-      stagedBarcodes = stagedBarcodes.filter(c => c !== code);
-      renderBarcodeTags();
-    }
-
-    function renderBarcodeTags() {
-      const container = document.getElementById('barcode-tags-container');
-      const statusBadge = document.getElementById('barcode-status');
-
-      if (stagedBarcodes.length === 0) {
-        container.innerHTML = '<span class="text-[11px] text-slate-400 self-center">No barcodes added yet. Scan or type above.</span>';
-        statusBadge.innerText = '';
-        return;
-      }
-
-      statusBadge.innerText = `${stagedBarcodes.length} barcode(s) in this batch`;
-      statusBadge.className = 'text-[10px] font-bold text-emerald-600';
-
-      container.innerHTML = stagedBarcodes.map(c => `
-        <span class="inline-flex items-center gap-1 bg-white border border-slate-300 text-slate-800 text-[11px] font-mono px-2 py-0.5 rounded shadow-sm">
-          <span>${c}</span>
-          <button type="button" onclick="removeBarcodeTag('${c}')" class="text-rose-500 hover:text-rose-700 font-bold ml-0.5">&times;</button>
-        </span>
-      `).join('');
     }
 
     // LIVE MEDICINE NAME & BATCH NUMBER SEARCH IN POS
@@ -1101,15 +1207,6 @@
       }
 
       return parsed;
-    }
-
-    // CUSTOM MEDICINE CODE GENERATOR FOR BARCODE-LESS STRIPS
-    function generateCustomMedicineCode() {
-      const batch = document.getElementById('form-batch').value.trim() || Date.now().toString().slice(-4);
-      const name = document.getElementById('form-name').value.trim().substring(0, 3).toUpperCase() || 'MED';
-      const customCode = `${name}-${batch}-${stagedBarcodes.length + 1}`;
-      
-      addBarcodeTag(customCode);
     }
 
     // CHECK EXISTING LOCAL MEDICINE ON BARCODE ENTER
@@ -1299,10 +1396,10 @@
         modalTitle.innerText = 'Continuous Batch Scanner';
         status.innerText = 'Scan strips one after another. Tap Done when finished.';
         multiControls.classList.remove('hidden');
-        countBadge.innerText = `${stagedBarcodes.length} scanned`;
+        countBadge.innerText = `${stagedBarcodes.length} attached`;
       } else if (target === 'details_search') {
         modalTitle.innerText = 'Scan to Search Medicine';
-        status.innerText = 'Scan any 1D barcode or 2D matrix to find medicine details.';
+        status.innerText = 'Scan any barcode or 2D matrix to find medicine details.';
         multiControls.classList.add('hidden');
       } else {
         modalTitle.innerText = 'Scan Barcode / 2D Matrix';
@@ -1326,7 +1423,6 @@
         });
         preStream.getTracks().forEach(t => t.stop());
       } catch (permErr) {
-        console.warn('Direct getUserMedia test failed:', permErr);
         if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
           status.innerHTML = 'Camera permission blocked. Tap the tune/lock icon in your URL bar and set Camera to <b>Allow</b>.';
           status.className = 'text-[11px] sm:text-xs text-center text-rose-600 mt-3 font-semibold';
@@ -1387,14 +1483,13 @@
           }
 
           checkExistingMedicine(barcodeToAdd);
-          countBadge.innerText = `${stagedBarcodes.length} scanned`;
+          countBadge.innerText = `${stagedBarcodes.length} attached`;
           status.innerText = `Added: ${barcodeToAdd}. Ready for next strip...`;
         } else if (activeScanTarget === 'details_search') {
           stopCameraScanner();
           const data = parsePharmaStripCode(decodedText);
           const searchVal = data.barcode || data.batchNumber || decodedText;
           
-          // Switch to Medicine Details tab and filter
           switchTab('medicines');
           const searchInput = document.getElementById('details-search-keyword');
           if (searchInput) {
@@ -1967,6 +2062,7 @@
               <div class="font-bold text-slate-800">${item.name}</div>
               <div class="text-xs text-slate-400">${item.genericName || 'No salt recorded'}</div>
             </td>
+            <td class="p-3 font-mono text-xs font-semibold text-slate-700">${item.batchNumber}</td>
             <td class="p-3 font-mono text-xs text-slate-500">${item.barcode}</td>
             <td class="p-3 font-semibold text-slate-800">${item.quantity} units</td>
             <td class="p-3">
@@ -1974,9 +2070,16 @@
               <span class="text-xs font-bold text-emerald-700 block">Sell: ₹${Number(item.price).toFixed(2)}</span>
             </td>
             <td class="p-3">${getExpiryBadge(item.expiryDate)}</td>
-            <td class="p-3 text-slate-600 text-xs">${item.rackLocation}</td>
-            <td class="p-3 text-center">
-              <button onclick="deleteMedicine('${item._id}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs">Delete</button>
+            <td class="p-3 text-center space-x-1">
+              <button onclick='loadMedicineForRestock(${JSON.stringify(item)})' class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded">
+                + Restock
+              </button>
+              <button onclick='loadMedicineForEdit(${JSON.stringify(item)})' class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">
+                Edit
+              </button>
+              <button onclick="deleteMedicine('${item._id}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs px-1">
+                Delete
+              </button>
             </td>
           </tr>
         `).join('');
@@ -1993,16 +2096,22 @@
               ${getExpiryBadge(item.expiryDate)}
             </div>
             <div class="flex justify-between items-center text-[11px] text-slate-600 font-mono pt-1 border-t border-slate-100">
-              <span>Code: ${item.barcode}</span>
+              <span>Batch: <b>${item.batchNumber}</b></span>
               <span>Stock: <b>${item.quantity}</b></span>
             </div>
             <div class="flex justify-between items-center text-[11px] pt-1">
-              <span class="text-slate-500">Cost: ₹${(item.costPrice || 0).toFixed(2)}</span>
-              <span class="font-bold text-emerald-700">Sell: ₹${Number(item.price).toFixed(2)}</span>
-            </div>
-            <div class="flex justify-between items-center text-[11px] text-slate-500 pt-1 border-t border-slate-50">
-              <span>Rack: ${item.rackLocation}</span>
-              <button onclick="deleteMedicine('${item._id}')" class="text-rose-500 text-xs font-bold active:text-rose-700">Delete</button>
+              <span class="text-slate-500">Sell: <b class="text-emerald-700">₹${Number(item.price).toFixed(2)}</b></span>
+              <div class="space-x-1">
+                <button onclick='loadMedicineForRestock(${JSON.stringify(item)})' class="text-emerald-700 text-xs font-bold px-2 py-0.5 bg-emerald-50 rounded">
+                  + Restock
+                </button>
+                <button onclick='loadMedicineForEdit(${JSON.stringify(item)})' class="text-blue-700 text-xs font-bold px-2 py-0.5 bg-blue-50 rounded">
+                  Edit
+                </button>
+                <button onclick="deleteMedicine('${item._id}')" class="text-rose-500 text-xs font-bold px-1">
+                  &times;
+                </button>
+              </div>
             </div>
           </div>
         `).join('');
@@ -2012,13 +2121,12 @@
     async function handleSaveMedicine(e) {
       e.preventDefault();
 
-      if (stagedBarcodes.length === 0) {
-        alert('Please scan or type at least one barcode before saving.');
-        document.getElementById('form-barcode-input').focus();
-        return;
-      }
+      const medicineId = document.getElementById('form-medicine-id').value;
+      const submitMode = document.getElementById('form-submit-mode').value;
 
       const payload = {
+        medicineId: medicineId || undefined,
+        mode: submitMode,
         barcodes: stagedBarcodes,
         name: document.getElementById('form-name').value.trim(),
         genericName: document.getElementById('form-generic').value.trim(),
@@ -2043,12 +2151,9 @@
           return;
         }
 
-        document.getElementById('medicine-form').reset();
-        stagedBarcodes = [];
-        renderBarcodeTags();
-        document.getElementById('profit-margin-container').classList.add('hidden');
+        resetStockForm();
         await fetchInventory();
-        alert('Batch and all associated barcodes saved successfully!');
+        alert('Stock updated successfully!');
       } catch (err) {
         alert('Failed to connect to backend.');
       }

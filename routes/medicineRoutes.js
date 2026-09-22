@@ -45,34 +45,82 @@ router.get('/alerts/expiring', async (req, res) => {
 
 // 4. Add or Restock Medicine (with Cost Price & Selling Price)
 // POST /api/medicines/upsert - Support single or multiple barcodes
+// POST /api/medicines/upsert - Support optional barcodes, editing, and restocking
 router.post('/upsert', async (req, res) => {
   try {
-    const { barcodes, barcode, name, genericName, batchNumber, quantity, costPrice, price, expiryDate, rackLocation } = req.body;
+    const { 
+      medicineId,
+      barcodes, 
+      barcode, 
+      name, 
+      genericName, 
+      batchNumber, 
+      quantity, 
+      costPrice, 
+      price, 
+      expiryDate, 
+      rackLocation,
+      mode // 'edit' (overwrite quantity/details) or 'restock' (increment quantity)
+    } = req.body;
 
-    const codeList = Array.isArray(barcodes) && barcodes.length > 0 
+    if (!name || !batchNumber || costPrice === undefined || !price || !expiryDate) {
+      return res.status(400).json({ error: 'Medicine name, batch number, pricing, and expiry date are required.' });
+    }
+
+    const cleanBatch = batchNumber.trim();
+    const cleanName = name.trim();
+
+    // 1. Direct ID Edit Mode (Update existing record)
+    if (medicineId) {
+      const updateData = {
+        name: cleanName,
+        genericName: (genericName || '').trim(),
+        batchNumber: cleanBatch,
+        costPrice: Number(costPrice),
+        price: Number(price),
+        expiryDate: new Date(expiryDate),
+        rackLocation: (rackLocation || 'General Shelf').trim()
+      };
+
+      if (mode === 'edit') {
+        updateData.quantity = Number(quantity);
+      }
+
+      const updateOp = mode === 'edit' 
+        ? { $set: updateData } 
+        : { $set: updateData,$inc: { quantity: Number(quantity) } };
+
+      const updated = await Medicine.findByIdAndUpdate(medicineId, updateOp, { new: true });
+      return res.status(200).json({ success: true, count: 1, medicine: updated });
+    }
+
+    // 2. Barcode Handling: Use provided barcodes or auto-generate one
+    let codeList = Array.isArray(barcodes) && barcodes.length > 0 
       ? barcodes 
       : (barcode ? [barcode] : []);
 
-    if (!codeList.length || !name || !batchNumber || quantity === undefined || costPrice === undefined || !price || !expiryDate) {
-      return res.status(400).json({ error: 'At least one barcode and all required fields (*) must be provided.' });
+    if (codeList.length === 0) {
+      // Auto-generate unique identifier for barcode-less stock
+      const cleanPrefix = cleanName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || 'MED';
+      codeList = [`${cleanPrefix}-${cleanBatch}-${Date.now().toString().slice(-4)}`];
     }
 
-    // Save/update each barcode entry under this batch
+    // Upsert items for each barcode under this batch
     const results = await Promise.all(
       codeList.map(code => 
         Medicine.findOneAndUpdate(
           { barcode: code.trim() },
           {
             $set: {
-              name: name.trim(),
+              name: cleanName,
               genericName: (genericName || '').trim(),
-              batchNumber: batchNumber.trim(),
+              batchNumber: cleanBatch,
               costPrice: Number(costPrice),
               price: Number(price),
               expiryDate: new Date(expiryDate),
               rackLocation: (rackLocation || 'General Shelf').trim()
             },
-            $inc: { quantity: Number(quantity) }
+            $inc: { quantity: Number(quantity || 0) }
           },
           { new: true, upsert: true, runValidators: true }
         )
