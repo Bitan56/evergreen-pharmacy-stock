@@ -86,7 +86,7 @@
         <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Point of Sale</h2>
-            <p class="text-[11px] sm:text-xs text-slate-500">Scan barcodes or search medicines by name and batch</p>
+            <p class="text-[11px] sm:text-xs text-slate-500">Scan barcodes, 2D matrices, or search medicines by name and batch</p>
           </div>
           <button onclick="startCameraScanner('pos')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" /></svg>
@@ -506,7 +506,7 @@
         <button onclick="stopCameraScanner()" class="text-slate-400 hover:text-slate-600 p-1 text-2xl font-bold leading-none">&times;</button>
       </div>
       <div id="camera-viewport" class="w-full bg-black rounded-lg overflow-hidden relative aspect-square sm:aspect-video flex items-center justify-center"></div>
-      <p id="scanner-status" class="text-[11px] sm:text-xs text-center text-slate-500 mt-3">Align barcode or square 2D matrix inside camera view.</p>
+      <p id="scanner-status" class="text-[11px] sm:text-xs text-center text-slate-500 mt-3">Hold phone 12–15 cm away under steady light.</p>
     </div>
   </div>
 
@@ -937,38 +937,50 @@
       return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
     }
 
-    // CAMERA SCANNER (Barcode + 2D DataMatrix)
+    // HIGH-RES CAMERA SCANNER (1080p + Autofocus for Tiny 2D Pharma Matrices)
     async function startCameraScanner(target) {
       activeScanTarget = target;
       document.getElementById('scanner-modal').classList.remove('hidden');
-      document.getElementById('scanner-status').innerText = 'Starting camera...';
+      document.getElementById('scanner-status').innerText = 'Initializing HD camera...';
 
       if (qrEngine) {
         try { await qrEngine.stop(); } catch(e) {}
         qrEngine = null;
       }
 
-      qrEngine = new Html5Qrcode('camera-viewport');
+      // Enable native hardware BarcodeDetector engine if supported
+      qrEngine = new Html5Qrcode('camera-viewport', {
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        }
+      });
 
-      const config = {
-        fps: 20,
-        qrbox: (w, h) => ({ width: Math.min(w * 0.85, 280), height: Math.min(h * 0.7, 220) }),
+      // 1. High-resolution 1080p constraint + continuous autofocus
+      const cameraConfig = {
+        facingMode: 'environment',
+        width: { ideal: 1920, min: 1280 },
+        height: { ideal: 1080, min: 720 },
+        focusMode: 'continuous',
+        advanced: [{ focusMode: 'continuous' }]
+      };
+
+      // 2. Full frame format decoder with DataMatrix explicitly prioritised
+      const scanConfig = {
+        fps: 15,
         formatsToSupport: [
-          Html5QrcodeSupportedFormats.DATA_MATRIX, // Strip square 2D code
+          Html5QrcodeSupportedFormats.DATA_MATRIX, // Square matrix on pharma strips
           Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
           Html5QrcodeSupportedFormats.CODE_128,
           Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E
+          Html5QrcodeSupportedFormats.UPC_A
         ]
       };
 
       try {
         await qrEngine.start(
-          { facingMode: 'environment' },
-          config,
+          cameraConfig,
+          scanConfig,
           (decodedText) => {
             playBeep();
             stopCameraScanner();
@@ -991,9 +1003,32 @@
           },
           () => {}
         );
-        document.getElementById('scanner-status').innerText = 'Point camera at barcode or 2D matrix.';
+        document.getElementById('scanner-status').innerText = 'Hold camera ~12-15 cm away under steady light.';
       } catch (err) {
-        document.getElementById('scanner-status').innerText = 'Camera access blocked or not found.';
+        console.warn('Falling back to standard camera configuration:', err);
+        try {
+          await qrEngine.start(
+            { facingMode: 'environment' },
+            scanConfig,
+            (decodedText) => {
+              playBeep();
+              stopCameraScanner();
+              if (activeScanTarget === 'pos') {
+                addItemToCartByBarcode(decodedText);
+              } else {
+                const data = parsePharmaStripCode(decodedText);
+                document.getElementById('form-barcode').value = data.barcode || decodedText;
+                if (data.batchNumber) document.getElementById('form-batch').value = data.batchNumber;
+                if (data.expiryDate) document.getElementById('form-expiry').value = data.expiryDate;
+                checkExistingMedicine(data.barcode || decodedText);
+              }
+            },
+            () => {}
+          );
+          document.getElementById('scanner-status').innerText = 'Hold camera ~12-15 cm away.';
+        } catch (fallbackErr) {
+          document.getElementById('scanner-status').innerText = 'Camera access blocked or not supported.';
+        }
       }
     }
 
