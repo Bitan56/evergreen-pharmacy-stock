@@ -162,26 +162,27 @@
               <span id="pos-subtotal" class="font-bold text-slate-800">₹0.00</span>
             </div>
 
+            <!-- Discount Field (Preset to 10% by default) -->
             <div class="flex items-center justify-between gap-2">
               <span class="text-xs sm:text-sm text-slate-600">Discount:</span>
               <div class="flex items-center gap-1.5 w-44">
                 <input 
                   type="number" 
                   id="pos-discount-value" 
-                  value="0" 
+                  value="10" 
                   min="0" 
                   step="any" 
                   oninput="renderCart()" 
-                  class="w-full border border-slate-300 rounded-md px-2 py-1 text-xs text-right focus:ring-1 focus:ring-emerald-500" 
-                  placeholder="0"
+                  class="w-full border border-slate-300 rounded-md px-2 py-1 text-xs text-right focus:ring-1 focus:ring-emerald-500 font-semibold" 
+                  placeholder="10"
                 />
                 <select 
                   id="pos-discount-type" 
                   onchange="renderCart()" 
-                  class="border border-slate-300 rounded-md px-1.5 py-1 text-xs bg-white text-slate-700 focus:ring-1 focus:ring-emerald-500"
+                  class="border border-slate-300 rounded-md px-1.5 py-1 text-xs bg-white text-slate-700 focus:ring-1 focus:ring-emerald-500 font-bold"
                 >
+                  <option value="percent" selected>%</option>
                   <option value="flat">₹</option>
-                  <option value="percent">%</option>
                 </select>
               </div>
             </div>
@@ -260,7 +261,7 @@
             />
           </div>
 
-          <!-- Product Identification (Direct Manual Input) -->
+          <!-- Product Identification -->
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
             <input type="text" id="form-name" required placeholder="e.g. Paracetamol 500mg, Dolo 650" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
@@ -925,8 +926,9 @@
     }
 
     function calculateDiscountAmount(subtotal) {
-      const val = parseFloat(document.getElementById('pos-discount-value')?.value) || 0;
-      const type = document.getElementById('pos-discount-type')?.value || 'flat';
+      const discountInput = document.getElementById('pos-discount-value')?.value;
+      const val = discountInput === '' ? 0 : (parseFloat(discountInput) || 0);
+      const type = document.getElementById('pos-discount-type')?.value || 'percent';
 
       let amount = (type === 'percent') ? (subtotal * val) / 100 : val;
       return Math.min(Math.max(0, amount), subtotal);
@@ -1058,7 +1060,8 @@
         updateDueAlert();
         document.getElementById('pos-cust-name').value = '';
         document.getElementById('pos-cust-phone').value = '';
-        document.getElementById('pos-discount-value').value = '0';
+        document.getElementById('pos-discount-value').value = '10';
+        document.getElementById('pos-discount-type').value = 'percent';
         document.getElementById('pos-amount-paid').value = '';
         renderCart();
         checkExpiryNotifications();
