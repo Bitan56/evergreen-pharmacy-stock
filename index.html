@@ -33,7 +33,7 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4">
-        <!-- Notification Bell Dropdown -->
+        <!-- Notification Bell -->
         <div class="relative">
           <button onclick="toggleNotifications()" aria-label="Notifications" class="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition">
             <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,7 +65,7 @@
     </div>
   </header>
 
-  <!-- Global Priority Alert Banner -->
+  <!-- Priority Alert Banner -->
   <div id="alert-banner" class="hidden bg-rose-50 border-b border-rose-200 text-rose-800 px-3 sm:px-4 py-2.5 text-xs sm:text-sm">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
       <div class="flex items-center gap-1.5 sm:gap-2">
@@ -96,29 +96,23 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 sm:mb-6">
-          <!-- Barcode Input -->
           <div class="sm:col-span-2">
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Scan / Enter Barcode (Press Enter)</label>
             <input type="text" id="pos-barcode-input" placeholder="Scan barcode or type code + Enter..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
           </div>
 
-          <!-- Customer Phone & Auto-Lookup -->
           <div class="relative">
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Customer Mobile</label>
             <input type="tel" id="pos-cust-phone" oninput="handlePhoneInput(this.value)" placeholder="10-digit mobile number" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" />
-            
-            <!-- Suggestion popup when existing user matches -->
             <div id="phone-suggestions" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto"></div>
           </div>
 
-          <!-- Customer Name -->
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
             <input type="text" id="pos-cust-name" placeholder="Walk-in Customer" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
           </div>
         </div>
 
-        <!-- Previous Due Banner for Customer -->
         <div id="pos-due-alert" class="hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs flex justify-between items-center text-amber-900">
           <div>
             <span class="font-bold">Existing Outstanding Balance:</span>
@@ -155,7 +149,7 @@
           </div>
         </div>
 
-        <!-- Summary, Dues & Payment Section -->
+        <!-- Summary & Payment -->
         <div class="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-4 pt-4 border-t border-slate-100">
           <p class="text-[11px] text-slate-400 hidden sm:block max-w-sm">
             * Expired batches are blocked. Completed bills automatically update inventory and customer ledger records.
@@ -168,7 +162,6 @@
               <span id="pos-subtotal" class="font-bold text-slate-800">₹0.00</span>
             </div>
 
-            <!-- Discount Field -->
             <div class="flex items-center justify-between gap-2">
               <span class="text-xs sm:text-sm text-slate-600">Discount:</span>
               <div class="flex items-center gap-1.5 w-44">
@@ -203,19 +196,16 @@
               <span id="pos-tax" class="font-bold text-slate-800">₹0.00</span>
             </div>
 
-            <!-- Previous Dues Row -->
             <div class="flex justify-between text-xs sm:text-sm text-amber-800 font-medium">
               <span>Previous Outstanding Due:</span>
               <span id="pos-prev-due">+₹0.00</span>
             </div>
 
-            <!-- Grand Total -->
             <div class="flex justify-between text-base sm:text-lg font-black text-slate-900 border-t border-slate-200 pt-1.5">
               <span>Total Payable:</span>
               <span id="pos-grand-total" class="text-emerald-600">₹0.00</span>
             </div>
 
-            <!-- Amount Paid vs Pending Dues -->
             <div class="pt-2 border-t border-dashed border-slate-200 space-y-2">
               <div class="flex items-center justify-between gap-2">
                 <span class="text-xs font-semibold text-slate-700">Amount Paid (₹):</span>
@@ -242,26 +232,45 @@
       </div>
     </section>
 
-    <!-- ================= TAB 2: INVENTORY ================= -->
+    <!-- ================= TAB 2: INVENTORY & RESTOCK ================= -->
     <section id="view-inventory" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Restock / Add Form -->
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
-          <h2 class="text-base sm:text-lg font-bold text-slate-800">Add / Restock</h2>
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Medicine</h2>
+            <p class="text-[10px] text-slate-500">Auto-fetches from medical database on scan</p>
+          </div>
           <button onclick="startCameraScanner('inventory')" class="text-xs bg-emerald-50 text-emerald-700 active:bg-emerald-100 font-semibold px-2.5 py-1.5 rounded transition">Scan Code</button>
         </div>
+
         <form id="medicine-form" onsubmit="handleSaveMedicine(event)" class="space-y-3 sm:space-y-4">
+          <!-- Barcode with live API indicator -->
           <div>
-            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Barcode *</label>
-            <input type="text" id="form-barcode" required placeholder="Scan or type code" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-mono" />
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Barcode *</label>
+              <span id="barcode-api-status" class="text-[10px] font-medium text-slate-400"></span>
+            </div>
+            <input 
+              type="text" 
+              id="form-barcode" 
+              required 
+              onchange="fetchMedicineInfo(this.value)" 
+              placeholder="Scan or type barcode + Enter" 
+              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-mono" 
+            />
           </div>
+
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
             <input type="text" id="form-name" required placeholder="e.g. Paracetamol 500mg" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
           </div>
+
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Generic / Salt Composition</label>
             <input type="text" id="form-generic" placeholder="e.g. Acetaminophen" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
           </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Batch No *</label>
@@ -272,26 +281,39 @@
               <input type="number" id="form-qty" required min="0" placeholder="50" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
+
+          <!-- Price Fields: Cost Price (Purchase) & Selling Price (MRP) -->
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Price (₹) *</label>
-              <input type="number" id="form-price" step="0.01" required min="0" placeholder="15.50" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Cost Price (₹) *</label>
+              <input type="number" id="form-cost-price" step="0.01" required min="0" placeholder="10.00" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-semibold" />
+              <span class="text-[9px] text-slate-400">Purchase / Dealer price</span>
             </div>
+            <div>
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Selling Price (₹) *</label>
+              <input type="number" id="form-price" step="0.01" required min="0" placeholder="15.50" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-700" />
+              <span class="text-[9px] text-slate-400">Retail / MRP</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Expiry Date *</label>
               <input type="date" id="form-expiry" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
+            <div>
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Rack / Shelf Location</label>
+              <input type="text" id="form-rack" placeholder="Rack B, Box 2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+            </div>
           </div>
-          <div>
-            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Rack / Shelf Location</label>
-            <input type="text" id="form-rack" placeholder="Rack B, Box 2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
-          </div>
-          <button type="submit" class="w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm transition">
+
+          <button type="submit" class="w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm">
             Save / Update Stock
           </button>
         </form>
       </div>
 
+      <!-- Current Inventory Stock Table -->
       <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
           <div>
@@ -301,6 +323,7 @@
           <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search name or barcode..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
         </div>
 
+        <!-- Desktop Inventory Table -->
         <div class="hidden sm:block overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
@@ -308,17 +331,19 @@
                 <th class="p-3">Name</th>
                 <th class="p-3">Barcode</th>
                 <th class="p-3">Stock</th>
+                <th class="p-3">Cost / Selling</th>
                 <th class="p-3">Expiry Status</th>
                 <th class="p-3">Rack</th>
                 <th class="p-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody id="inventory-table-body" class="divide-y divide-slate-100">
-              <tr><td colspan="6" class="p-6 text-center text-slate-400">Loading stock...</td></tr>
+              <tr><td colspan="7" class="p-6 text-center text-slate-400">Loading stock...</td></tr>
             </tbody>
           </table>
         </div>
 
+        <!-- Mobile Inventory Cards -->
         <div id="inventory-mobile-container" class="sm:hidden space-y-2.5">
           <div class="p-6 text-center text-slate-400 text-xs">Loading stock...</div>
         </div>
@@ -617,6 +642,50 @@
       return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
     }
 
+    // AUTOMATED MEDICAL API LOOKUP ON SCAN / ENTER
+    async function fetchMedicineInfo(barcode) {
+      const cleanBarcode = barcode.trim();
+      if (!cleanBarcode) return;
+
+      const statusBadge = document.getElementById('barcode-api-status');
+      statusBadge.innerText = 'Searching medical registry...';
+      statusBadge.className = 'text-[10px] font-semibold text-blue-600 animate-pulse';
+
+      try {
+        const res = await fetch(`${API_BASE}/medicines/lookup-external/${encodeURIComponent(cleanBarcode)}`);
+        const result = await res.json();
+
+        if (result.found) {
+          if (result.source === 'local') {
+            statusBadge.innerText = 'Restocking existing medicine';
+            statusBadge.className = 'text-[10px] font-semibold text-emerald-600';
+            document.getElementById('form-name').value = result.name || '';
+            document.getElementById('form-generic').value = result.genericName || '';
+            document.getElementById('form-batch').value = result.batchNumber || '';
+            document.getElementById('form-cost-price').value = result.costPrice || '';
+            document.getElementById('form-price').value = result.price || '';
+            document.getElementById('form-rack').value = result.rackLocation || '';
+            if (result.expiryDate) {
+              document.getElementById('form-expiry').value = result.expiryDate.split('T')[0];
+            }
+          } else {
+            statusBadge.innerText = 'Auto-fetched from Medical Registry';
+            statusBadge.className = 'text-[10px] font-semibold text-emerald-600';
+            document.getElementById('form-name').value = result.name || '';
+            document.getElementById('form-generic').value = result.genericName || '';
+            // Focus on batch/price since they are unique to the package
+            document.getElementById('form-batch').focus();
+          }
+        } else {
+          statusBadge.innerText = 'Not in public registry — enter manually';
+          statusBadge.className = 'text-[10px] font-semibold text-amber-600';
+        }
+      } catch (err) {
+        statusBadge.innerText = 'Offline / Enter details manually';
+        statusBadge.className = 'text-[10px] font-semibold text-slate-400';
+      }
+    }
+
     // CAMERA SCANNER
     async function startCameraScanner(target) {
       activeScanTarget = target;
@@ -656,7 +725,7 @@
               addItemToCartByBarcode(decodedText);
             } else {
               document.getElementById('form-barcode').value = decodedText;
-              checkExistingInventory(decodedText);
+              fetchMedicineInfo(decodedText);
             }
           },
           () => {}
@@ -695,7 +764,7 @@
     let lastKeyTime = Date.now();
 
     window.addEventListener('keydown', (e) => {
-      if (['pos-cust-name', 'pos-cust-phone', 'pos-amount-paid', 'form-name', 'form-generic', 'form-batch', 'form-rack', 'inventory-search', 'customer-search'].includes(e.target.id)) {
+      if (['pos-cust-name', 'pos-cust-phone', 'pos-amount-paid', 'form-name', 'form-generic', 'form-batch', 'form-cost-price', 'form-price', 'form-rack', 'inventory-search', 'customer-search'].includes(e.target.id)) {
         return;
       }
 
@@ -710,7 +779,7 @@
             addItemToCartByBarcode(barcodeBuffer.trim());
           } else if (!document.getElementById('view-inventory').classList.contains('hidden')) {
             document.getElementById('form-barcode').value = barcodeBuffer.trim();
-            checkExistingInventory(barcodeBuffer.trim());
+            fetchMedicineInfo(barcodeBuffer.trim());
           }
           barcodeBuffer = '';
         }
@@ -1197,11 +1266,12 @@
       const mobileList = document.getElementById('inventory-mobile-container');
 
       if (!filtered || filtered.length === 0) {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">No matching medicines found.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">No matching medicines found.</td></tr>';
         if (mobileList) mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">No matching medicines found.</div>';
         return;
       }
 
+      // Desktop Rows (Includes Cost Price & Selling Price breakdown)
       if (tbody) {
         tbody.innerHTML = filtered.map(item => `
           <tr class="hover:bg-slate-50">
@@ -1211,6 +1281,10 @@
             </td>
             <td class="p-3 font-mono text-xs text-slate-500">${item.barcode}</td>
             <td class="p-3 font-semibold text-slate-800">${item.quantity} units</td>
+            <td class="p-3">
+              <span class="text-xs text-slate-500">Cost: ₹${(item.costPrice || 0).toFixed(2)}</span>
+              <span class="text-xs font-bold text-emerald-700 block">Sell: ₹${Number(item.price).toFixed(2)}</span>
+            </td>
             <td class="p-3">${getExpiryBadge(item.expiryDate)}</td>
             <td class="p-3 text-slate-600 text-xs">${item.rackLocation}</td>
             <td class="p-3 text-center">
@@ -1220,6 +1294,7 @@
         `).join('');
       }
 
+      // Mobile Cards
       if (mobileList) {
         mobileList.innerHTML = filtered.map(item => `
           <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
@@ -1234,30 +1309,17 @@
               <span>Code: ${item.barcode}</span>
               <span>Stock: <b>${item.quantity}</b></span>
             </div>
-            <div class="flex justify-between items-center text-[11px] text-slate-500">
+            <div class="flex justify-between items-center text-[11px] pt-1">
+              <span class="text-slate-500">Cost: ₹${(item.costPrice || 0).toFixed(2)}</span>
+              <span class="font-bold text-emerald-700">Sell: ₹${Number(item.price).toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between items-center text-[11px] text-slate-500 pt-1 border-t border-slate-50">
               <span>Rack: ${item.rackLocation}</span>
               <button onclick="deleteMedicine('${item._id}')" class="text-rose-500 text-xs font-bold active:text-rose-700">Delete</button>
             </div>
           </div>
         `).join('');
       }
-    }
-
-    async function checkExistingInventory(barcode) {
-      try {
-        const res = await fetch(`${API_BASE}/medicines/scan/${encodeURIComponent(barcode)}`);
-        if (res.ok) {
-          const med = await res.json();
-          document.getElementById('form-name').value = med.name || '';
-          document.getElementById('form-generic').value = med.genericName || '';
-          document.getElementById('form-batch').value = med.batchNumber || '';
-          document.getElementById('form-price').value = med.price || '';
-          document.getElementById('form-rack').value = med.rackLocation || '';
-          if (med.expiryDate) {
-            document.getElementById('form-expiry').value = med.expiryDate.split('T')[0];
-          }
-        }
-      } catch (err) {}
     }
 
     async function handleSaveMedicine(e) {
@@ -1268,6 +1330,7 @@
         genericName: document.getElementById('form-generic').value.trim(),
         batchNumber: document.getElementById('form-batch').value.trim(),
         quantity: document.getElementById('form-qty').value,
+        costPrice: document.getElementById('form-cost-price').value,
         price: document.getElementById('form-price').value,
         expiryDate: document.getElementById('form-expiry').value,
         rackLocation: document.getElementById('form-rack').value.trim()
@@ -1287,8 +1350,9 @@
         }
 
         document.getElementById('medicine-form').reset();
+        document.getElementById('barcode-api-status').innerText = '';
         await fetchInventory();
-        alert('Stock updated!');
+        alert('Stock updated successfully!');
       } catch (err) {
         alert('Failed to connect to backend.');
       }

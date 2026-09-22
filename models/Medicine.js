@@ -6,7 +6,8 @@ const MedicineSchema = new mongoose.Schema({
   barcode: { type: String, required: true, unique: true, trim: true, index: true },
   batchNumber: { type: String, required: true, trim: true },
   quantity: { type: Number, required: true, min: 0, default: 0 },
-  price: { type: Number, required: true, min: 0 },
+  costPrice: { type: Number, required: true, min: 0, default: 0 }, // Purchase / Cost Price
+  price: { type: Number, required: true, min: 0 }, // Selling Price (MRP)
   expiryDate: { type: Date, required: true },
   rackLocation: { type: String, default: 'General Shelf' }
 }, { timestamps: true });
