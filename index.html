@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>PharmaCare Management & POS</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- HTML5 Barcode / QR Scanner -->
+  <!-- HTML5 Barcode / QR / 2D DataMatrix Scanner -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <!-- Client-side PDF Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -86,7 +86,7 @@
         <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Point of Sale</h2>
-            <p class="text-[11px] sm:text-xs text-slate-500">Scan barcodes via scanner gun or device camera</p>
+            <p class="text-[11px] sm:text-xs text-slate-500">Scan barcodes or 2D strip codes via scanner gun or device camera</p>
           </div>
           <button onclick="startCameraScanner('pos')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" /></svg>
@@ -239,43 +239,53 @@
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Medicine</h2>
-            <p class="text-[10px] text-slate-500">Scan or type barcode to auto-fill existing stock</p>
+            <p class="text-[10px] text-slate-500">Scan barcode, 2D strip matrix, or generate ID</p>
           </div>
-          <button onclick="startCameraScanner('inventory')" class="text-xs bg-emerald-50 text-emerald-700 active:bg-emerald-100 font-semibold px-2.5 py-1.5 rounded transition">Scan Barcode</button>
+          <button onclick="startCameraScanner('inventory')" class="text-xs bg-emerald-50 text-emerald-700 active:bg-emerald-100 font-semibold px-2.5 py-1.5 rounded transition">Scan Code</button>
         </div>
 
         <form id="medicine-form" onsubmit="handleSaveMedicine(event)" class="space-y-3 sm:space-y-4">
-          <!-- Barcode Input -->
+          <!-- Barcode / 2D Matrix / Gen ID Field -->
           <div>
             <div class="flex justify-between items-center mb-1">
-              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Barcode *</label>
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Barcode / 2D Matrix *</label>
               <span id="barcode-status" class="text-[10px] font-medium text-slate-400"></span>
             </div>
-            <input 
-              type="text" 
-              id="form-barcode" 
-              required 
-              onchange="checkExistingMedicine(this.value)" 
-              placeholder="Scan or type barcode + Enter" 
-              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-mono" 
-            />
+            <div class="flex items-center gap-1.5">
+              <input 
+                type="text" 
+                id="form-barcode" 
+                required 
+                onchange="checkExistingMedicine(this.value)" 
+                placeholder="Scan code or click Gen ID" 
+                class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-mono" 
+              />
+              <button 
+                type="button" 
+                onclick="generateCustomMedicineCode()" 
+                title="Generate custom identifier for barcode-less strips"
+                class="px-2.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg whitespace-nowrap transition border border-slate-200"
+              >
+                Gen ID
+              </button>
+            </div>
           </div>
 
           <!-- Product Identification -->
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
-            <input type="text" id="form-name" required placeholder="e.g. Paracetamol 500mg, Dolo 650" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+            <input type="text" id="form-name" required placeholder="e.g. PAN 40, Paracetamol 500mg" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
           </div>
 
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Generic / Salt Composition</label>
-            <input type="text" id="form-generic" placeholder="e.g. Acetaminophen, Paracetamol IP" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+            <input type="text" id="form-generic" placeholder="e.g. Pantoprazole Gastro-resistant IP" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Batch No *</label>
-              <input type="text" id="form-batch" required placeholder="B-1092" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+              <input type="text" id="form-batch" required placeholder="26441882" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-mono" />
             </div>
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Stock Qty *</label>
@@ -408,7 +418,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-slate-800">Customer Directory & Dues</h2>
-          <p class="text-[11px] text-slate-500">Track customers and settle outstanding balances</p>
+          <p class="text-[11px] sm:text-xs text-slate-500">Track customers and settle outstanding balances</p>
         </div>
         <input type="text" id="customer-search" oninput="renderCustomers()" placeholder="Search name or mobile..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
       </div>
@@ -452,15 +462,15 @@
     </button>
   </div>
 
-  <!-- Camera Barcode Scanner Modal -->
+  <!-- Camera Barcode & 2D Matrix Scanner Modal -->
   <div id="scanner-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div class="bg-white rounded-xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 shadow-2xl relative">
       <div class="flex justify-between items-center mb-3">
-        <h3 class="font-bold text-sm sm:text-base text-slate-800">Scan Barcode / QR</h3>
+        <h3 class="font-bold text-sm sm:text-base text-slate-800">Scan Barcode / 2D Matrix</h3>
         <button onclick="stopCameraScanner()" class="text-slate-400 hover:text-slate-600 p-1 text-2xl font-bold leading-none">&times;</button>
       </div>
       <div id="camera-viewport" class="w-full bg-black rounded-lg overflow-hidden relative aspect-square sm:aspect-video flex items-center justify-center"></div>
-      <p id="scanner-status" class="text-[11px] sm:text-xs text-center text-slate-500 mt-3">Align barcode within the camera view.</p>
+      <p id="scanner-status" class="text-[11px] sm:text-xs text-center text-slate-500 mt-3">Align barcode or square 2D matrix inside camera view.</p>
     </div>
   </div>
 
@@ -584,6 +594,59 @@
       if (tab === 'customers') fetchCustomers();
     }
 
+    // PHARMA STRIP 2D MATRIX & GS1 PARSER
+    function parsePharmaStripCode(decodedRaw) {
+      let parsed = {
+        barcode: '',
+        batchNumber: '',
+        expiryDate: ''
+      };
+
+      const raw = decodedRaw.trim();
+
+      // 1. Check GS1 Application Identifier standards (AI 01 = GTIN, AI 17 = Expiry YYMMDD, AI 10 = Batch)
+      if (/^01\d{14}/.test(raw)) {
+        parsed.barcode = raw.substring(2, 16);
+        
+        const expIndex = raw.indexOf('17', 16);
+        if (expIndex !== -1 && expIndex + 8 <= raw.length) {
+          const yy = raw.substr(expIndex + 2, 2);
+          const mm = raw.substr(expIndex + 4, 2);
+          const dd = raw.substr(expIndex + 6, 2);
+          parsed.expiryDate = `20${yy}-${mm}-${dd === '00' ? '28' : dd}`;
+        }
+
+        const batchIndex = raw.indexOf('10', 16);
+        if (batchIndex !== -1) {
+          parsed.batchNumber = raw.substring(batchIndex + 2).split(/[\x1D\s]/)[0];
+        }
+      } 
+      // 2. Delimited 2D Matrix Codes
+      else if (raw.includes('|') || raw.includes(',')) {
+        const parts = raw.split(/[|,]/);
+        parsed.barcode = parts[0] || raw;
+        parsed.batchNumber = parts[1] || '';
+      } 
+      // 3. Fallback string
+      else {
+        parsed.barcode = raw;
+      }
+
+      return parsed;
+    }
+
+    // CUSTOM MEDICINE CODE GENERATOR FOR BARCODE-LESS STRIPS
+    function generateCustomMedicineCode() {
+      const batch = document.getElementById('form-batch').value.trim() || Date.now().toString().slice(-4);
+      const name = document.getElementById('form-name').value.trim().substring(0, 3).toUpperCase() || 'MED';
+      const customCode = `${name}-${batch}`;
+      
+      document.getElementById('form-barcode').value = customCode;
+      const statusBadge = document.getElementById('barcode-status');
+      statusBadge.innerText = 'Custom ID Generated';
+      statusBadge.className = 'text-[10px] font-semibold text-purple-600';
+    }
+
     // CHECK EXISTING LOCAL MEDICINE ON BARCODE ENTER
     async function checkExistingMedicine(barcode) {
       const cleanBarcode = barcode.trim();
@@ -611,7 +674,7 @@
           }
           updateProfitMarginDisplay();
         } else {
-          statusBadge.innerText = 'New item barcode';
+          statusBadge.innerText = 'New item code';
           statusBadge.className = 'text-[10px] font-semibold text-blue-600';
         }
       } catch (err) {
@@ -737,7 +800,7 @@
       return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
     }
 
-    // BARCODE CAMERA SCANNER
+    // CAMERA SCANNER (Barcode + 2D DataMatrix)
     async function startCameraScanner(target) {
       activeScanTarget = target;
       document.getElementById('scanner-modal').classList.remove('hidden');
@@ -751,16 +814,17 @@
       qrEngine = new Html5Qrcode('camera-viewport');
 
       const config = {
-        fps: 15,
-        qrbox: (w, h) => ({ width: Math.min(w * 0.8, 280), height: Math.min(h * 0.5, 160) }),
+        fps: 20,
+        qrbox: (w, h) => ({ width: Math.min(w * 0.85, 280), height: Math.min(h * 0.7, 220) }),
         formatsToSupport: [
+          Html5QrcodeSupportedFormats.DATA_MATRIX, // Supports strip 2D matrix codes
+          Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.EAN_13,
           Html5QrcodeSupportedFormats.EAN_8,
           Html5QrcodeSupportedFormats.CODE_128,
           Html5QrcodeSupportedFormats.CODE_39,
           Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.QR_CODE
+          Html5QrcodeSupportedFormats.UPC_E
         ]
       };
 
@@ -775,13 +839,23 @@
             if (activeScanTarget === 'pos') {
               addItemToCartByBarcode(decodedText);
             } else {
-              document.getElementById('form-barcode').value = decodedText;
-              checkExistingMedicine(decodedText);
+              // Parse pharma 2D strip standard or 1D barcode
+              const data = parsePharmaStripCode(decodedText);
+              
+              document.getElementById('form-barcode').value = data.barcode || decodedText;
+              if (data.batchNumber) {
+                document.getElementById('form-batch').value = data.batchNumber;
+              }
+              if (data.expiryDate) {
+                document.getElementById('form-expiry').value = data.expiryDate;
+              }
+
+              checkExistingMedicine(data.barcode || decodedText);
             }
           },
           () => {}
         );
-        document.getElementById('scanner-status').innerText = 'Point camera at barcode.';
+        document.getElementById('scanner-status').innerText = 'Point camera at barcode or 2D matrix.';
       } catch (err) {
         document.getElementById('scanner-status').innerText = 'Camera access blocked or not found.';
       }
@@ -829,8 +903,11 @@
           if (!document.getElementById('view-pos').classList.contains('hidden')) {
             addItemToCartByBarcode(barcodeBuffer.trim());
           } else if (!document.getElementById('view-inventory').classList.contains('hidden')) {
-            document.getElementById('form-barcode').value = barcodeBuffer.trim();
-            checkExistingMedicine(barcodeBuffer.trim());
+            const data = parsePharmaStripCode(barcodeBuffer.trim());
+            document.getElementById('form-barcode').value = data.barcode || barcodeBuffer.trim();
+            if (data.batchNumber) document.getElementById('form-batch').value = data.batchNumber;
+            if (data.expiryDate) document.getElementById('form-expiry').value = data.expiryDate;
+            checkExistingMedicine(data.barcode || barcodeBuffer.trim());
           }
           barcodeBuffer = '';
         }
