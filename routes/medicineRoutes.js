@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Medicine = require('../models/Medicine');
 
-// 1. Get all inventory sorted by expiry
+// 1. Get all inventory sorted by expiry date
 router.get('/', async (req, res) => {
   try {
     const medicines = await Medicine.find().sort({ expiryDate: 1 });
@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 2. Local Database Barcode Lookup (for POS & restock checking)
+// 2. Local Database Barcode Lookup (for POS & Restock check)
 router.get('/scan/:barcode', async (req, res) => {
   try {
     const barcode = req.params.barcode.trim();
@@ -26,81 +26,7 @@ router.get('/scan/:barcode', async (req, res) => {
   }
 });
 
-// 3. Direct Medical API Lookup (OpenFDA + Open Food/Pharma Facts Registry)
-router.get('/lookup-external/:barcode', async (req, res) => {
-  const barcode = req.params.barcode.trim();
-
-  // Step A: Check local MongoDB first
-  try {
-    const localMed = await Medicine.findOne({ barcode });
-    if (localMed) {
-      return res.json({
-        found: true,
-        source: 'local',
-        name: localMed.name,
-        genericName: localMed.genericName,
-        batchNumber: localMed.batchNumber,
-        costPrice: localMed.costPrice,
-        price: localMed.price,
-        expiryDate: localMed.expiryDate,
-        rackLocation: localMed.rackLocation
-      });
-    }
-  } catch (err) {
-    console.error('Local lookup error:', err);
-  }
-
-  // Step B: Query Open Products Database
-  try {
-    const externalRes = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`, {
-      headers: { 'User-Agent': 'EvergreenPharmacy-ManagementSystem - Web - v1.0' }
-    });
-
-    if (externalRes.ok) {
-      const data = await externalRes.json();
-      if (data.status === 1 && data.product) {
-        const prod = data.product;
-        const name = prod.product_name || prod.product_name_en || '';
-        const genericName = prod.generic_name || prod.generic_name_en || prod.ingredients_text || '';
-
-        if (name) {
-          return res.json({
-            found: true,
-            source: 'external',
-            name: name.trim(),
-            genericName: genericName.trim()
-          });
-        }
-      }
-    }
-  } catch (apiErr) {
-    console.warn('External barcode lookup error:', apiErr.message);
-  }
-
-  // Step C: If barcode is an NDC code, attempt OpenFDA
-  try {
-    const fdaRes = await fetch(`https://api.fda.gov/drug/ndc.json?search=product_ndc:"${encodeURIComponent(barcode)}"&limit=1`);
-    if (fdaRes.ok) {
-      const fdaData = await fdaRes.json();
-      if (fdaData.results && fdaData.results.length > 0) {
-        const drug = fdaData.results[0];
-        return res.json({
-          found: true,
-          source: 'openfda',
-          name: drug.brand_name || drug.proprietary_name || '',
-          genericName: drug.generic_name || drug.active_ingredients?.map(i => i.name).join(', ') || ''
-        });
-      }
-    }
-  } catch (fdaErr) {
-    console.warn('OpenFDA lookup error:', fdaErr.message);
-  }
-
-  // Not found in any registry — allow user manual entry
-  res.json({ found: false, message: 'Barcode not found in external medical registries.' });
-});
-
-// 4. Expiry alerts query
+// 3. Expiry alerts query
 router.get('/alerts/expiring', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 90;
@@ -117,7 +43,7 @@ router.get('/alerts/expiring', async (req, res) => {
   }
 });
 
-// 5. Add / Restock Medicine with costPrice
+// 4. Add or Restock Medicine (with Cost Price & Selling Price)
 router.post('/upsert', async (req, res) => {
   try {
     const { name, genericName, barcode, batchNumber, quantity, costPrice, price, expiryDate, rackLocation } = req.body;
@@ -149,7 +75,7 @@ router.post('/upsert', async (req, res) => {
   }
 });
 
-// 6. Delete item
+// 5. Delete item
 router.delete('/:id', async (req, res) => {
   try {
     await Medicine.findByIdAndDelete(req.params.id);
@@ -157,73 +83,6 @@ router.delete('/:id', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-});
-
-// GET /api/medicines/lookup-salt?name=Paracetamol
-router.get('/lookup-salt', async (req, res) => {
-  const queryName = (req.query.name || '').trim();
-  if (!queryName || queryName.length < 2) {
-    return res.json({ found: false });
-  }
-
-  // 1. Check local database first (if you've already stocked this medicine before)
-  try {
-    const localMatch = await Medicine.findOne({
-      name: { $regex: new RegExp(`^${queryName}$`, 'i') },
-      genericName: { $exists: true, $ne: '' }
-    });
-    if (localMatch && localMatch.genericName) {
-      return res.json({ found: true, salt: localMatch.genericName, source: 'local' });
-    }
-  } catch (err) {
-    console.warn('Local salt lookup error:', err.message);
-  }
-
-  // 2. Query OpenFDA Drug Database (Free, no API key needed)
-  try {
-    const fdaUrl = `https://api.fda.gov/drug/ndc.json?search=brand_name:"${encodeURIComponent(queryName)}"&limit=1`;
-    const fdaRes = await fetch(fdaUrl);
-    if (fdaRes.ok) {
-      const data = await fdaRes.json();
-      if (data.results && data.results.length > 0) {
-        const drug = data.results[0];
-        const salt = drug.generic_name || 
-          (drug.active_ingredients && drug.active_ingredients.map(i => `${i.name} ${i.strength || ''}`.trim()).join(' + '));
-        if (salt) {
-          return res.json({ found: true, salt: salt.trim(), source: 'openfda' });
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('OpenFDA salt lookup error:', err.message);
-  }
-
-  // 3. Query NIH / NLM RxNorm Approximate Term API (Free, no API key needed)
-  try {
-    const rxNormUrl = `https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(queryName)}&maxEntries=1`;
-    const rxRes = await fetch(rxNormUrl, { headers: { 'Accept': 'application/json' } });
-    if (rxRes.ok) {
-      const rxData = await rxRes.json();
-      const candidate = rxData.approximateGroup?.candidate?.[0];
-      if (candidate && candidate.rxcui) {
-        const propUrl = `https://rxnav.nlm.nih.gov/REST/rxcui/${candidate.rxcui}/allProperties.json?prop=names`;
-        const propRes = await fetch(propUrl, { headers: { 'Accept': 'application/json' } });
-        if (propRes.ok) {
-          const propData = await propRes.json();
-          const propConcept = propData.propConceptGroup?.propConcept?.find(p => p.propName === 'RxNorm Name');
-          const nameFound = propConcept?.propValue;
-          if (nameFound && nameFound.toLowerCase() !== queryName.toLowerCase()) {
-            return res.json({ found: true, salt: nameFound, source: 'rxnorm' });
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('RxNorm salt lookup error:', err.message);
-  }
-
-  // 4. Return not found if no registry matches
-  return res.json({ found: false, message: 'Salt composition not found in public databases.' });
 });
 
 module.exports = router;

@@ -10,10 +10,8 @@
   <!-- Client-side PDF Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-  <!-- OCR Text Scanner for Medicine Packages -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
-    #camera-viewport video, #ocr-video {
+    #camera-viewport video {
       width: 100% !important;
       height: 100% !important;
       object-fit: cover !important;
@@ -240,7 +238,7 @@
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Medicine</h2>
-            <p class="text-[10px] text-slate-500">Auto-fetches from medical database on scan / typing</p>
+            <p class="text-[10px] text-slate-500">Scan or type barcode to auto-fill existing stock</p>
           </div>
           <button onclick="startCameraScanner('inventory')" class="text-xs bg-emerald-50 text-emerald-700 active:bg-emerald-100 font-semibold px-2.5 py-1.5 rounded transition">Scan Barcode</button>
         </div>
@@ -250,65 +248,27 @@
           <div>
             <div class="flex justify-between items-center mb-1">
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Barcode *</label>
-              <span id="barcode-api-status" class="text-[10px] font-medium text-slate-400"></span>
+              <span id="barcode-status" class="text-[10px] font-medium text-slate-400"></span>
             </div>
             <input 
               type="text" 
               id="form-barcode" 
               required 
-              onchange="fetchMedicineInfo(this.value)" 
+              onchange="checkExistingMedicine(this.value)" 
               placeholder="Scan or type barcode + Enter" 
               class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-mono" 
             />
           </div>
 
-          <!-- Medicine Details & Package OCR Scanner -->
-          <div class="space-y-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-slate-700">Product Identification</span>
-              <button 
-                type="button" 
-                onclick="startLabelOcrScanner()" 
-                class="inline-flex items-center gap-1 text-xs bg-emerald-100 hover:bg-emerald-200 active:bg-emerald-300 text-emerald-800 font-bold px-2.5 py-1 rounded-md transition"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                Scan Label (OCR)
-              </button>
-            </div>
+          <!-- Product Identification (Direct Manual Input) -->
+          <div>
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
+            <input type="text" id="form-name" required placeholder="e.g. Paracetamol 500mg, Dolo 650" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+          </div>
 
-            <div id="ocr-status-box" class="hidden text-[11px] p-2 rounded border"></div>
-
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Medicine Name *</label>
-                <span id="name-typing-status" class="text-[10px] font-medium text-slate-400"></span>
-              </div>
-              <input 
-                type="text" 
-                id="form-name" 
-                required 
-                oninput="handleMedicineNameInput(this.value)" 
-                onblur="fetchSaltComposition(this.value)" 
-                placeholder="e.g. Dolo 650, Augmentin 625, Paracetamol" 
-                class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" 
-              />
-            </div>
-
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Generic / Salt Composition</label>
-                <span id="salt-api-status" class="text-[10px] font-medium text-slate-400"></span>
-              </div>
-              <input 
-                type="text" 
-                id="form-generic" 
-                placeholder="Auto-fetched or enter manually" 
-                class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" 
-              />
-            </div>
+          <div>
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Generic / Salt Composition</label>
+            <input type="text" id="form-generic" placeholder="e.g. Acetaminophen, Paracetamol IP" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -447,7 +407,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-slate-800">Customer Directory & Dues</h2>
-          <p class="text-[11px] sm:text-xs text-slate-500">Track customers and settle outstanding balances</p>
+          <p class="text-[11px] text-slate-500">Track customers and settle outstanding balances</p>
         </div>
         <input type="text" id="customer-search" oninput="renderCustomers()" placeholder="Search name or mobile..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
       </div>
@@ -503,37 +463,6 @@
     </div>
   </div>
 
-  <!-- Package Label OCR Scanner Modal -->
-  <div id="ocr-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-    <div class="bg-white rounded-xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 shadow-2xl relative space-y-4">
-      <div class="flex justify-between items-center">
-        <div>
-          <h3 class="font-bold text-sm sm:text-base text-slate-800">Scan Medicine Package</h3>
-          <p class="text-[11px] text-slate-500">Hold medicine label steadily in good light</p>
-        </div>
-        <button onclick="stopLabelOcrScanner()" class="text-slate-400 hover:text-slate-600 p-1 text-2xl font-bold leading-none">&times;</button>
-      </div>
-
-      <div class="relative w-full aspect-video sm:aspect-square bg-black rounded-lg overflow-hidden flex items-center justify-center">
-        <video id="ocr-video" autoplay playsinline class="w-full h-full object-cover"></video>
-        <canvas id="ocr-canvas" class="hidden"></canvas>
-        <div class="absolute inset-x-6 inset-y-12 border-2 border-dashed border-emerald-400/80 rounded-lg pointer-events-none"></div>
-      </div>
-
-      <div id="ocr-modal-status" class="text-xs text-center text-slate-500 font-medium">Position the brand name & salt text within the frame</div>
-
-      <div class="flex gap-2">
-        <button type="button" onclick="captureAndRecognizeText()" id="ocr-snap-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-2.5 rounded-lg text-xs transition shadow-sm flex items-center justify-center gap-1.5">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-          Capture & Extract
-        </button>
-        <button type="button" onclick="cancelOcrToManual()" class="px-4 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-lg text-xs transition">
-          Enter Manually
-        </button>
-      </div>
-    </div>
-  </div>
-
   <script>
     const API_BASE = '/api';
 
@@ -544,8 +473,6 @@
     let qrEngine = null;
     let activeScanTarget = 'pos';
     let currentCustomerDue = 0;
-    let ocrStream = null;
-    let saltLookupTimer = null;
 
     // NOTIFICATIONS
     function toggleNotifications() {
@@ -656,50 +583,38 @@
       if (tab === 'customers') fetchCustomers();
     }
 
-    // AUTOMATIC SALT COMPOSITION FETCHING AS USER TYPES
-    function handleMedicineNameInput(val) {
-      clearTimeout(saltLookupTimer);
-      const name = val.trim();
-      const statusBadge = document.getElementById('salt-api-status');
+    // CHECK EXISTING LOCAL MEDICINE ON BARCODE ENTER
+    async function checkExistingMedicine(barcode) {
+      const cleanBarcode = barcode.trim();
+      if (!cleanBarcode) return;
 
-      if (name.length < 3) {
-        statusBadge.innerText = '';
-        return;
-      }
-
-      statusBadge.innerText = 'Searching medical databases...';
-      statusBadge.className = 'text-[10px] font-medium text-blue-600 animate-pulse';
-
-      saltLookupTimer = setTimeout(() => {
-        fetchSaltComposition(name);
-      }, 600);
-    }
-
-    async function fetchSaltComposition(name) {
-      const cleanName = name.trim();
-      if (!cleanName || cleanName.length < 3) return;
-
-      const genericInput = document.getElementById('form-generic');
-      const statusBadge = document.getElementById('salt-api-status');
+      const statusBadge = document.getElementById('barcode-status');
+      statusBadge.innerText = 'Checking inventory...';
+      statusBadge.className = 'text-[10px] font-medium text-slate-500';
 
       try {
-        const res = await fetch(`${API_BASE}/medicines/lookup-salt?name=${encodeURIComponent(cleanName)}`);
-        const result = await res.json();
+        const res = await fetch(`${API_BASE}/medicines/scan/${encodeURIComponent(cleanBarcode)}`);
+        if (res.ok) {
+          const med = await res.json();
+          statusBadge.innerText = 'Restocking existing medicine';
+          statusBadge.className = 'text-[10px] font-semibold text-emerald-600';
 
-        if (result.found && result.salt) {
-          // Auto-fill salt composition
-          genericInput.value = result.salt;
-          statusBadge.innerText = `✓ Found (${result.source || 'Medical API'})`;
-          statusBadge.className = 'text-[10px] font-bold text-emerald-600';
+          document.getElementById('form-name').value = med.name || '';
+          document.getElementById('form-generic').value = med.genericName || '';
+          document.getElementById('form-batch').value = med.batchNumber || '';
+          document.getElementById('form-cost-price').value = med.costPrice || '';
+          document.getElementById('form-price').value = med.price || '';
+          document.getElementById('form-rack').value = med.rackLocation || '';
+          if (med.expiryDate) {
+            document.getElementById('form-expiry').value = med.expiryDate.split('T')[0];
+          }
+          updateProfitMarginDisplay();
         } else {
-          // Failure / Not found fallback
-          statusBadge.innerText = 'Not in registry — please enter manually';
-          statusBadge.className = 'text-[10px] font-semibold text-amber-600';
-          // User can still type manually in genericInput
+          statusBadge.innerText = 'New item barcode';
+          statusBadge.className = 'text-[10px] font-semibold text-blue-600';
         }
       } catch (err) {
-        statusBadge.innerText = 'Registry offline — enter manually';
-        statusBadge.className = 'text-[10px] font-semibold text-slate-400';
+        statusBadge.innerText = '';
       }
     }
 
@@ -736,135 +651,6 @@
           </svg>
           Loss Warning: ${marginPercentage}% (-₹${Math.abs(profit).toFixed(2)}/unit)
         `;
-      }
-    }
-
-    // OCR SCANNER LOGIC
-    async function startLabelOcrScanner() {
-      const modal = document.getElementById('ocr-modal');
-      const video = document.getElementById('ocr-video');
-      const status = document.getElementById('ocr-modal-status');
-      const snapBtn = document.getElementById('ocr-snap-btn');
-
-      modal.classList.remove('hidden');
-      snapBtn.disabled = false;
-      status.innerText = 'Position the brand name & salt text within the frame';
-      status.className = 'text-xs text-center text-slate-500 font-medium';
-
-      try {
-        ocrStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-        });
-        video.srcObject = ocrStream;
-      } catch (err) {
-        console.error('Camera access error:', err);
-        status.innerText = 'Camera access blocked. Please enter details manually.';
-        status.className = 'text-xs text-center text-rose-600 font-bold';
-      }
-    }
-
-    function stopLabelOcrScanner() {
-      if (ocrStream) {
-        ocrStream.getTracks().forEach(track => track.stop());
-        ocrStream = null;
-      }
-      document.getElementById('ocr-modal').classList.add('hidden');
-    }
-
-    function cancelOcrToManual() {
-      stopLabelOcrScanner();
-      showOcrStatus('Scan cancelled. Please enter medicine name and salt manually.', 'warning');
-      document.getElementById('form-name').focus();
-    }
-
-    function showOcrStatus(message, type) {
-      const box = document.getElementById('ocr-status-box');
-      box.classList.remove('hidden');
-      if (type === 'success') {
-        box.className = 'text-[11px] p-2 rounded border bg-emerald-50 border-emerald-200 text-emerald-800 font-medium';
-        box.innerText = '✓ ' + message;
-      } else {
-        box.className = 'text-[11px] p-2 rounded border bg-amber-50 border-amber-200 text-amber-800 font-medium';
-        box.innerText = '⚠ ' + message;
-      }
-    }
-
-    async function captureAndRecognizeText() {
-      const video = document.getElementById('ocr-video');
-      const canvas = document.getElementById('ocr-canvas');
-      const status = document.getElementById('ocr-modal-status');
-      const snapBtn = document.getElementById('ocr-snap-btn');
-
-      if (!video.videoWidth) {
-        status.innerText = 'Camera still loading. Please wait...';
-        return;
-      }
-
-      snapBtn.disabled = true;
-      status.innerText = 'Analyzing package text with OCR...';
-      status.className = 'text-xs text-center text-blue-600 font-bold animate-pulse';
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      try {
-        const worker = await Tesseract.createWorker('eng');
-        const ret = await worker.recognize(canvas);
-        await worker.terminate();
-
-        const fullText = ret.data.text || '';
-        stopLabelOcrScanner();
-        parseMedicineOcrText(fullText);
-      } catch (err) {
-        console.error('OCR Processing error:', err);
-        stopLabelOcrScanner();
-        showOcrStatus('Scanning failed to detect text. Please type manually.', 'warning');
-        document.getElementById('form-name').focus();
-      }
-    }
-
-    function parseMedicineOcrText(rawText) {
-      const lines = rawText
-        .split('\n')
-        .map(l => l.trim())
-        .filter(l => l.length > 2 && !/^(mfg|exp|batch|b\.no|m\.r\.p|rs|date|lic)/i.test(l));
-
-      if (lines.length === 0) {
-        showOcrStatus('Could not read package label clearly. Please enter details manually.', 'warning');
-        document.getElementById('form-name').focus();
-        return;
-      }
-
-      let detectedName = '';
-      let detectedSalt = '';
-
-      const saltRegex = /(paracetamol|hydrochloride|maleate|potassium|sodium|ip|bp|usp|tablet|capsule|syrup|ointment|amoxicillin|clavulanate|azithromycin|pantoprazole|omeprazole|metformin|amlodipine|cetirizine|ibuprofen)/i;
-
-      for (const line of lines) {
-        if (!detectedSalt && saltRegex.test(line)) {
-          detectedSalt = line;
-        } else if (!detectedName && line.length >= 3 && !saltRegex.test(line)) {
-          detectedName = line;
-        }
-      }
-
-      if (!detectedName && lines.length > 0) detectedName = lines[0];
-      if (!detectedSalt && lines.length > 1) detectedSalt = lines[1];
-
-      if (detectedName) {
-        document.getElementById('form-name').value = detectedName;
-        // If salt wasn't explicitly in the image, try API lookup
-        if (!detectedSalt) fetchSaltComposition(detectedName);
-      }
-      if (detectedSalt) document.getElementById('form-generic').value = detectedSalt;
-
-      if (detectedName || detectedSalt) {
-        showOcrStatus('Extracted from label scan! Review or edit details as needed.', 'success');
-      } else {
-        showOcrStatus('Text scan inconclusive. Please fill fields manually.', 'warning');
-        document.getElementById('form-name').focus();
       }
     }
 
@@ -950,50 +736,6 @@
       return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
     }
 
-    // MEDICAL API LOOKUP ON BARCODE SCAN
-    async function fetchMedicineInfo(barcode) {
-      const cleanBarcode = barcode.trim();
-      if (!cleanBarcode) return;
-
-      const statusBadge = document.getElementById('barcode-api-status');
-      statusBadge.innerText = 'Searching medical registry...';
-      statusBadge.className = 'text-[10px] font-semibold text-blue-600 animate-pulse';
-
-      try {
-        const res = await fetch(`${API_BASE}/medicines/lookup-external/${encodeURIComponent(cleanBarcode)}`);
-        const result = await res.json();
-
-        if (result.found) {
-          if (result.source === 'local') {
-            statusBadge.innerText = 'Restocking existing medicine';
-            statusBadge.className = 'text-[10px] font-semibold text-emerald-600';
-            document.getElementById('form-name').value = result.name || '';
-            document.getElementById('form-generic').value = result.genericName || '';
-            document.getElementById('form-batch').value = result.batchNumber || '';
-            document.getElementById('form-cost-price').value = result.costPrice || '';
-            document.getElementById('form-price').value = result.price || '';
-            document.getElementById('form-rack').value = result.rackLocation || '';
-            if (result.expiryDate) {
-              document.getElementById('form-expiry').value = result.expiryDate.split('T')[0];
-            }
-            updateProfitMarginDisplay();
-          } else {
-            statusBadge.innerText = 'Auto-fetched from Medical Registry';
-            statusBadge.className = 'text-[10px] font-semibold text-emerald-600';
-            document.getElementById('form-name').value = result.name || '';
-            document.getElementById('form-generic').value = result.genericName || '';
-            document.getElementById('form-batch').focus();
-          }
-        } else {
-          statusBadge.innerText = 'Not in public registry — enter manually';
-          statusBadge.className = 'text-[10px] font-semibold text-amber-600';
-        }
-      } catch (err) {
-        statusBadge.innerText = 'Offline / Enter details manually';
-        statusBadge.className = 'text-[10px] font-semibold text-slate-400';
-      }
-    }
-
     // BARCODE CAMERA SCANNER
     async function startCameraScanner(target) {
       activeScanTarget = target;
@@ -1033,7 +775,7 @@
               addItemToCartByBarcode(decodedText);
             } else {
               document.getElementById('form-barcode').value = decodedText;
-              fetchMedicineInfo(decodedText);
+              checkExistingMedicine(decodedText);
             }
           },
           () => {}
@@ -1087,7 +829,7 @@
             addItemToCartByBarcode(barcodeBuffer.trim());
           } else if (!document.getElementById('view-inventory').classList.contains('hidden')) {
             document.getElementById('form-barcode').value = barcodeBuffer.trim();
-            fetchMedicineInfo(barcodeBuffer.trim());
+            checkExistingMedicine(barcodeBuffer.trim());
           }
           barcodeBuffer = '';
         }
@@ -1326,7 +1068,7 @@
       }
     }
 
-    // PDF INVOICE
+    // PDF INVOICE GENERATOR
     function generatePdf(billData) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -1656,10 +1398,8 @@
         }
 
         document.getElementById('medicine-form').reset();
-        document.getElementById('barcode-api-status').innerText = '';
-        document.getElementById('salt-api-status').innerText = '';
+        document.getElementById('barcode-status').innerText = '';
         document.getElementById('profit-margin-container').classList.add('hidden');
-        document.getElementById('ocr-status-box').classList.add('hidden');
         await fetchInventory();
         alert('Stock updated successfully!');
       } catch (err) {
