@@ -234,7 +234,6 @@
 
     <!-- ================= TAB 2: INVENTORY & RESTOCK ================= -->
     <section id="view-inventory" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Restock / Add Form -->
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
           <div>
@@ -245,7 +244,6 @@
         </div>
 
         <form id="medicine-form" onsubmit="handleSaveMedicine(event)" class="space-y-3 sm:space-y-4">
-          <!-- Barcode with live API indicator -->
           <div>
             <div class="flex justify-between items-center mb-1">
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">Barcode *</label>
@@ -282,17 +280,42 @@
             </div>
           </div>
 
-          <!-- Price Fields: Cost Price (Purchase) & Selling Price (MRP) -->
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Cost Price (₹) *</label>
-              <input type="number" id="form-cost-price" step="0.01" required min="0" placeholder="10.00" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-semibold" />
-              <span class="text-[9px] text-slate-400">Purchase / Dealer price</span>
+          <!-- Price Inputs & Live Profit Margin Badge -->
+          <div class="space-y-1.5">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Cost Price (₹) *</label>
+                <input 
+                  type="number" 
+                  id="form-cost-price" 
+                  step="0.01" 
+                  required 
+                  min="0" 
+                  oninput="updateProfitMarginDisplay()" 
+                  placeholder="10.00" 
+                  class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-semibold" 
+                />
+                <span class="text-[9px] text-slate-400">Purchase / Dealer price</span>
+              </div>
+              <div>
+                <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Selling Price (₹) *</label>
+                <input 
+                  type="number" 
+                  id="form-price" 
+                  step="0.01" 
+                  required 
+                  min="0" 
+                  oninput="updateProfitMarginDisplay()" 
+                  placeholder="15.50" 
+                  class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-700" 
+                />
+                <span class="text-[9px] text-slate-400">Retail / MRP</span>
+              </div>
             </div>
-            <div>
-              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Selling Price (₹) *</label>
-              <input type="number" id="form-price" step="0.01" required min="0" placeholder="15.50" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-700" />
-              <span class="text-[9px] text-slate-400">Retail / MRP</span>
+
+            <!-- Green Profit Margin Indicator -->
+            <div id="profit-margin-container" class="hidden text-[11px] font-semibold flex items-center gap-1.5 pt-0.5">
+              <span id="profit-margin-text"></span>
             </div>
           </div>
 
@@ -323,7 +346,6 @@
           <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search name or barcode..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
         </div>
 
-        <!-- Desktop Inventory Table -->
         <div class="hidden sm:block overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
@@ -343,7 +365,6 @@
           </table>
         </div>
 
-        <!-- Mobile Inventory Cards -->
         <div id="inventory-mobile-container" class="sm:hidden space-y-2.5">
           <div class="p-6 text-center text-slate-400 text-xs">Loading stock...</div>
         </div>
@@ -560,6 +581,42 @@
       if (tab === 'customers') fetchCustomers();
     }
 
+    // LIVE PROFIT MARGIN CALCULATOR
+    function updateProfitMarginDisplay() {
+      const cost = parseFloat(document.getElementById('form-cost-price')?.value);
+      const sell = parseFloat(document.getElementById('form-price')?.value);
+      const container = document.getElementById('profit-margin-container');
+      const text = document.getElementById('profit-margin-text');
+
+      if (isNaN(cost) || isNaN(sell) || sell <= 0) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      const profit = sell - cost;
+      const marginPercentage = ((profit / sell) * 100).toFixed(2);
+
+      container.classList.remove('hidden');
+
+      if (profit >= 0) {
+        text.className = 'text-emerald-600 font-bold flex items-center gap-1';
+        text.innerHTML = `
+          <svg class="w-3.5 h-3.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+          </svg>
+          Profit Margin: ${marginPercentage}% (+₹${profit.toFixed(2)}/unit)
+        `;
+      } else {
+        text.className = 'text-rose-600 font-bold flex items-center gap-1';
+        text.innerHTML = `
+          <svg class="w-3.5 h-3.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+          </svg>
+          Loss Warning: ${marginPercentage}% (-₹${Math.abs(profit).toFixed(2)}/unit)
+        `;
+      }
+    }
+
     // CUSTOMER AUTO-LOOKUP & DUES
     let lookupTimer = null;
     function handlePhoneInput(phone) {
@@ -668,12 +725,12 @@
             if (result.expiryDate) {
               document.getElementById('form-expiry').value = result.expiryDate.split('T')[0];
             }
+            updateProfitMarginDisplay();
           } else {
             statusBadge.innerText = 'Auto-fetched from Medical Registry';
             statusBadge.className = 'text-[10px] font-semibold text-emerald-600';
             document.getElementById('form-name').value = result.name || '';
             document.getElementById('form-generic').value = result.genericName || '';
-            // Focus on batch/price since they are unique to the package
             document.getElementById('form-batch').focus();
           }
         } else {
@@ -1271,7 +1328,7 @@
         return;
       }
 
-      // Desktop Rows (Includes Cost Price & Selling Price breakdown)
+      // Desktop Rows
       if (tbody) {
         tbody.innerHTML = filtered.map(item => `
           <tr class="hover:bg-slate-50">
@@ -1351,6 +1408,7 @@
 
         document.getElementById('medicine-form').reset();
         document.getElementById('barcode-api-status').innerText = '';
+        document.getElementById('profit-margin-container').classList.add('hidden');
         await fetchInventory();
         alert('Stock updated successfully!');
       } catch (err) {
