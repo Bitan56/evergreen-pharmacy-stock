@@ -40,7 +40,10 @@
       <div class="flex items-center space-x-2.5">
         <div class="bg-emerald-600 text-white p-1.5 sm:p-2 rounded-lg font-black text-base sm:text-xl leading-none">Rx</div>
         <div>
-          <h1 class="font-bold text-sm sm:text-lg leading-tight">Evergreen Pharmacy</h1>
+          <div class="flex items-center gap-1.5">
+            <h1 class="font-bold text-sm sm:text-lg leading-tight">Evergreen Pharmacy</h1>
+            <span id="server-status-dot" title="Checking server status..." class="w-2 h-2 rounded-full bg-amber-400"></span>
+          </div>
           <p class="text-[10px] sm:text-xs text-slate-500">Stock Management & POS</p>
         </div>
       </div>
@@ -78,17 +81,10 @@
     </div>
   </header>
 
-  <!-- Priority Alert Banner -->
-  <div id="alert-banner" class="hidden bg-rose-50 border-b border-rose-200 text-rose-800 px-3 sm:px-4 py-2.5 text-xs sm:text-sm">
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
-      <div class="flex items-center gap-1.5 sm:gap-2">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-        </svg>
-        <span id="alert-banner-text" class="font-medium truncate"></span>
-      </div>
-      <button onclick="switchTab('inventory')" class="underline text-[11px] sm:text-xs font-bold text-rose-900 flex-shrink-0">Review</button>
-    </div>
+  <!-- Server Warning Banner -->
+  <div id="server-error-banner" class="hidden bg-rose-600 text-white px-4 py-2 text-xs font-bold text-center">
+    Cannot connect to server or database. Ensure backend server is running and database connection is available.
+    <button onclick="checkServerHealth()" class="underline ml-2">Retry Connection</button>
   </div>
 
   <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -163,7 +159,7 @@
           <div>
             <span class="font-bold">Existing Outstanding Balance:</span>
             <span id="pos-due-alert-amount" class="font-bold text-amber-700 ml-1">₹0.00</span>
-            <span class="text-[10px] text-amber-600 ml-2">(Automatically added to Total Payable)</span>
+            <span class="text-[10px] text-amber-600 ml-2">(Added to Total Payable)</span>
           </div>
           <button onclick="clearCustomerDueSelection()" class="text-amber-700 hover:text-amber-900 font-bold text-xs underline">Remove Due</button>
         </div>
@@ -237,7 +233,7 @@
               <span id="pos-discount-display">-₹0.00</span>
             </div>
 
-            <div class="flex justify-between text-xs sm:text-sm text-slate-600">
+            <div class="flex justify-between text-xs sm:text-slate-600">
               <span>GST (5%):</span>
               <span id="pos-tax" class="font-bold text-slate-800">₹0.00</span>
             </div>
@@ -281,7 +277,7 @@
     <!-- ================= TAB 2: INVENTORY & STOCKING ================= -->
     <section id="view-inventory" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
       
-      <!-- RESTOCK FORM -->
+      <!-- Restock Form Card -->
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
           <div>
@@ -289,7 +285,6 @@
             <p id="stock-form-subtitle" class="text-[10px] text-slate-500">Scan barcodes (optional) or enter details</p>
           </div>
           <div class="flex items-center gap-1.5">
-            <!-- MATCH MEDICINE BUTTON -->
             <button 
               type="button" 
               onclick="openBillMatchingModal()" 
@@ -308,11 +303,11 @@
           <input type="hidden" id="form-medicine-id" value="" />
           <input type="hidden" id="form-submit-mode" value="restock" />
 
-          <!-- OPTIONAL MULTI-BARCODE TAGGING -->
-          <div id="barcode-section-block">
+          <!-- Optional Multi-Barcode -->
+          <div>
             <div class="flex justify-between items-center mb-1">
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">
-                Barcodes <span class="text-slate-400 font-normal">(Leave empty to mark as "No Barcode")</span>
+                Barcodes <span class="text-slate-400 font-normal">(Leave empty for "No Barcode")</span>
               </label>
               <span id="barcode-status" class="text-[10px] font-medium text-slate-400"></span>
             </div>
@@ -335,19 +330,17 @@
               <button 
                 type="button" 
                 onclick="startCameraScanner('inventory_multi')" 
-                title="Continuous camera scan"
-                class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg whitespace-nowrap transition border border-slate-200"
+                class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-200"
               >
                 Scan (Cam)
               </button>
             </div>
 
             <div id="barcode-tags-container" class="flex flex-wrap gap-1.5 mt-2 min-h-[38px] p-2 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
-              <span class="text-[11px] text-amber-700 font-medium self-center">No barcode entered. Item will be flagged as "No Barcode" (can be added later).</span>
+              <span class="text-[11px] text-amber-700 font-medium self-center">No barcode entered. Item will be flagged as "No Barcode".</span>
             </div>
           </div>
 
-          <!-- Product Identification -->
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
             <input type="text" id="form-name" required placeholder="e.g. PAN 40, Paracetamol 500mg" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
@@ -358,11 +351,10 @@
             <input type="text" id="form-generic" placeholder="e.g. Pantoprazole Gastro-resistant IP" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
           </div>
 
-          <!-- Dealer Name & Purchase Invoice Number -->
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Dealer / Supplier Name</label>
-              <input type="text" id="form-dealer-name" placeholder="e.g. Apollo Pharma Distributors" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+              <input type="text" id="form-dealer-name" placeholder="e.g. Apollo Pharma" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
             </div>
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Purchase Invoice Number</label>
@@ -377,11 +369,10 @@
             </div>
             <div>
               <label id="form-qty-label" class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Quantity to Add *</label>
-              <input type="number" id="form-qty" required min="1" value="1" placeholder="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+              <input type="number" id="form-qty" required min="1" value="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
 
-          <!-- Price Inputs & Live Profit Margin Badge -->
           <div class="space-y-1.5">
             <div class="grid grid-cols-2 gap-3">
               <div>
@@ -396,7 +387,6 @@
                   placeholder="10.00" 
                   class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-semibold" 
                 />
-                <span class="text-[9px] text-slate-400">Purchase price</span>
               </div>
               <div>
                 <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Selling Price (₹) *</label>
@@ -410,7 +400,6 @@
                   placeholder="15.50" 
                   class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-700" 
                 />
-                <span class="text-[9px] text-slate-400">Retail / MRP</span>
               </div>
             </div>
 
@@ -441,7 +430,7 @@
         </form>
       </div>
 
-      <!-- CURRENT INVENTORY STOCK TABLE -->
+      <!-- Current Inventory Stock Table -->
       <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm flex flex-col justify-between">
         <div>
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
@@ -478,14 +467,14 @@
       </div>
     </section>
 
-    <!-- ================= TAB 3: MEDICINE DETAILS & EXPORT/IMPORT DIRECTORY ================= -->
+    <!-- ================= TAB 3: MEDICINE DETAILS DIRECTORY ================= -->
     <section id="view-medicines" class="hidden space-y-4">
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 mb-4">
           <div>
-            <h2 class="text-base sm:text-lg font-bold text-slate-800">Medicine Directory & Export/Import Center</h2>
-            <p class="text-[11px] sm:text-xs text-slate-500">Filter by date ranges or invoices, upload JSON stocks, and export reports</p>
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">Medicine Directory & Reports</h2>
+            <p class="text-[11px] sm:text-xs text-slate-500">Filter by dates or invoices, upload JSON stocks, and export reports</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <label class="cursor-pointer inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-2 rounded-lg text-xs font-bold transition border border-slate-200">
@@ -501,21 +490,21 @@
           </div>
         </div>
 
-        <!-- Filter Bar -->
+        <!-- Filter Controls -->
         <div class="bg-slate-50 border border-slate-200 rounded-lg p-3.5 mb-5 space-y-3">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1">Search Keyword (Name/Salt/Batch/Code)</label>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">Search Keyword</label>
               <input 
                 type="text" 
                 id="details-search-keyword" 
                 oninput="renderMedicineDirectory()" 
-                placeholder="e.g. PAN 40, Pantoprazole..." 
+                placeholder="Name, salt, batch, barcode..." 
                 class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-emerald-500 bg-white" 
               />
             </div>
             <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1">Date / Start Date (Purchase)</label>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">Start Date (Purchase)</label>
               <input 
                 type="date" 
                 id="details-search-start-date" 
@@ -524,7 +513,7 @@
               />
             </div>
             <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1">End Date (Optional Range)</label>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">End Date (Range)</label>
               <input 
                 type="date" 
                 id="details-search-end-date" 
@@ -545,25 +534,23 @@
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
-            <span id="directory-match-count" class="text-xs font-bold text-slate-600">Showing 0 matching medicines</span>
+            <span id="directory-match-count" class="text-xs font-bold text-slate-600">Showing 0 matching medicine(s)</span>
             
             <div class="flex items-center gap-2">
               <button onclick="clearDirectoryFilters()" class="text-xs text-slate-500 hover:text-slate-800 underline px-2 py-1">
                 Reset Filters
               </button>
               <button onclick="downloadFilteredJson()" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Download JSON
               </button>
               <button onclick="downloadFilteredPdf()" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                 Download Tabular PDF
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Directory Table View (Desktop) -->
+        <!-- Desktop Directory Table -->
         <div class="hidden md:block overflow-x-auto border border-slate-100 rounded-lg">
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
@@ -584,7 +571,7 @@
           </table>
         </div>
 
-        <!-- Directory Cards View (Mobile) -->
+        <!-- Mobile Cards -->
         <div id="directory-mobile-container" class="md:hidden space-y-2.5">
           <div class="p-6 text-center text-slate-400 text-xs">Loading medicine records...</div>
         </div>
@@ -674,7 +661,7 @@
     </button>
   </div>
 
-  <!-- Camera Barcode & 2D Matrix Scanner Modal -->
+  <!-- Camera Scanner Modal -->
   <div id="scanner-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div class="bg-white rounded-xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 shadow-2xl relative">
       <div class="flex justify-between items-center mb-3">
@@ -690,7 +677,7 @@
     </div>
   </div>
 
-  <!-- DEDICATED BILL / INVOICE MEDICINE MATCHING MODAL -->
+  <!-- BILL MEDICINE MATCHING MODAL -->
   <div id="bill-matching-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-3 sm:p-5 hidden">
     <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
       
@@ -731,10 +718,11 @@
             <span class="font-bold text-slate-800" id="bill-meta-invoice">Invoice: -</span> • 
             <span id="bill-meta-dealer">Dealer: -</span>
           </div>
-          <span class="text-[11px] text-slate-400">Stored automatically in local storage</span>
+          <span class="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Synced to Database & Storage
+          </span>
         </div>
 
-        <!-- Medicine Matching Search Bar -->
         <div class="relative">
           <input 
             type="text" 
@@ -747,7 +735,7 @@
         </div>
       </div>
 
-      <!-- Checklist Table Body -->
+      <!-- Table Body -->
       <div class="flex-1 overflow-y-auto p-2 sm:p-4">
         <table class="w-full text-left text-xs sm:text-sm">
           <thead class="bg-slate-50 text-slate-600 text-[11px] font-bold uppercase border-b border-slate-200 sticky top-0 z-10">
@@ -781,7 +769,7 @@
     </div>
   </div>
 
-  <!-- ATTACH BARCODE MODAL (For Unmarked Items) -->
+  <!-- ATTACH BARCODE MODAL -->
   <div id="attach-barcode-modal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl relative space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -903,11 +891,56 @@
     let stagedBarcodes = [];
 
     // ==========================================
-    // BILL / INVOICE MATCHING (LOCALSTORAGE)
+    // EXPIRY STATUS BADGE HELPER
+    // ==========================================
+    function getExpiryBadge(dateStr) {
+      if (!dateStr) return '<span class="text-slate-400 text-xs">No Expiry</span>';
+      
+      const diffDays = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) {
+        return `<span class="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Expired (${Math.abs(diffDays)}d ago)</span>`;
+      } else if (diffDays <= 30) {
+        return `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Critical (${diffDays}d)</span>`;
+      } else if (diffDays <= 90) {
+        return `<span class="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Expiring (${diffDays}d)</span>`;
+      }
+      return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
+    }
+
+    // ==========================================
+    // SERVER HEALTH CHECK
+    // ==========================================
+    async function checkServerHealth() {
+      const dot = document.getElementById('server-status-dot');
+      const banner = document.getElementById('server-error-banner');
+
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.database === 'connected') {
+            dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+            dot.title = 'Server & Database Connected';
+            banner.classList.add('hidden');
+            return true;
+          }
+        }
+        throw new Error('Database disconnected');
+      } catch (err) {
+        dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        dot.title = 'Server or Database Disconnected';
+        banner.classList.remove('hidden');
+        return false;
+      }
+    }
+
+    // ==========================================
+    // BILL / INVOICE MATCHING (DATABASE SYNC)
     // ==========================================
     const STORAGE_KEY_BILL = 'evergreen_active_bill_checklist';
 
     let activeBillData = {
+      _id: null,
       invoiceNumber: '',
       dealerName: '',
       items: []
@@ -923,31 +956,36 @@
       document.getElementById('bill-matching-modal').classList.add('hidden');
     }
 
-    function loadSavedBillChecklist() {
+    async function loadSavedBillChecklist() {
+      try {
+        const res = await fetch(`${API_BASE}/bills/active`);
+        if (res.ok) {
+          const dbBill = await res.json();
+          if (dbBill && dbBill.items && dbBill.items.length) {
+            activeBillData = dbBill;
+            renderBillChecklist();
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Backend bill fetch failed, reading localStorage fallback:', err);
+      }
+
       try {
         const raw = localStorage.getItem(STORAGE_KEY_BILL);
         if (raw) {
           activeBillData = JSON.parse(raw);
+          renderBillChecklist();
         }
-      } catch (err) {
-        console.warn('Could not read saved bill checklist from localStorage:', err);
-      }
+      } catch (e) {}
     }
 
-    function saveBillChecklistToStorage() {
-      try {
-        localStorage.setItem(STORAGE_KEY_BILL, JSON.stringify(activeBillData));
-      } catch (err) {
-        console.warn('Could not save bill checklist to localStorage:', err);
-      }
-    }
-
-    function handleBillJsonUpload(e) {
+    async function handleBillJsonUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const parsed = JSON.parse(event.target.result);
           
@@ -964,11 +1002,11 @@
           }
 
           if (!items.length) {
-            alert('Could not find medicine items in uploaded JSON file. Please ensure it has a list of medicines.');
+            alert('Could not find medicine items in uploaded JSON file.');
             return;
           }
 
-          activeBillData = {
+          const payload = {
             invoiceNumber,
             dealerName,
             items: items.map((it, idx) => ({
@@ -987,17 +1025,48 @@
             }))
           };
 
-          saveBillChecklistToStorage();
+          try {
+            const res = await fetch(`${API_BASE}/bills/upload`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+              activeBillData = await res.json();
+            } else {
+              activeBillData = payload;
+            }
+          } catch (dbErr) {
+            activeBillData = payload;
+          }
+
+          localStorage.setItem(STORAGE_KEY_BILL, JSON.stringify(activeBillData));
           renderBillChecklist();
-          alert(`Bill checklist loaded with ${activeBillData.items.length} items!`);
+          alert(`Bill uploaded and connected (${activeBillData.items.length} items)!`);
         } catch (err) {
-          alert('Failed to parse bill JSON file. Please verify format.');
+          alert('Failed to parse bill JSON file.');
         } finally {
           e.target.value = '';
         }
       };
 
       reader.readAsText(file);
+    }
+
+    async function syncBillItemToDatabase(itemId, updatePayload) {
+      localStorage.setItem(STORAGE_KEY_BILL, JSON.stringify(activeBillData));
+
+      if (!activeBillData._id) return;
+      try {
+        await fetch(`${API_BASE}/bills/${activeBillData._id}/update-item`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ itemId, ...updatePayload })
+        });
+      } catch (err) {
+        console.warn('Could not sync item to DB:', err);
+      }
     }
 
     function renderBillChecklist() {
@@ -1040,7 +1109,6 @@
         ? 'bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200'
         : 'bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-200';
 
-      // Filter by search bar query
       const filtered = activeBillData.items.filter(item => {
         if (!searchVal) return true;
         return (item.name && item.name.toLowerCase().includes(searchVal)) ||
@@ -1113,7 +1181,7 @@
     function toggleBillItemMatch(index, isChecked) {
       if (activeBillData.items[index]) {
         activeBillData.items[index].matched = isChecked;
-        saveBillChecklistToStorage();
+        syncBillItemToDatabase(activeBillData.items[index].id, { matched: isChecked });
         renderBillChecklist();
       }
     }
@@ -1125,7 +1193,10 @@
         if (qty < activeBillData.items[index].billedQty && !activeBillData.items[index].notes) {
           activeBillData.items[index].notes = `${activeBillData.items[index].billedQty - qty} unit(s) missing from delivery`;
         }
-        saveBillChecklistToStorage();
+        syncBillItemToDatabase(activeBillData.items[index].id, {
+          receivedQty: qty,
+          notes: activeBillData.items[index].notes
+        });
         renderBillChecklist();
       }
     }
@@ -1133,11 +1204,11 @@
     function updateBillItemNotes(index, val) {
       if (activeBillData.items[index]) {
         activeBillData.items[index].notes = val.trim();
-        saveBillChecklistToStorage();
+        syncBillItemToDatabase(activeBillData.items[index].id, { notes: val.trim() });
       }
     }
 
-    function eraseActiveBillChecklist() {
+    async function eraseActiveBillChecklist() {
       const totalItems = activeBillData.items ? activeBillData.items.length : 0;
       const matchedCount = activeBillData.items ? activeBillData.items.filter(i => i.matched).length : 0;
 
@@ -1148,14 +1219,20 @@
 
       if (!confirm(msg)) return;
 
+      try {
+        await fetch(`${API_BASE}/bills/active`, { method: 'DELETE' });
+      } catch (e) {}
+
       localStorage.removeItem(STORAGE_KEY_BILL);
-      activeBillData = { invoiceNumber: '', dealerName: '', items: [] };
+      activeBillData = { _id: null, invoiceNumber: '', dealerName: '', items: [] };
       document.getElementById('bill-matching-search').value = '';
       renderBillChecklist();
       alert('Invoice checklist erased.');
     }
 
-    // NOTIFICATIONS
+    // ==========================================
+    // NOTIFICATIONS & TABS
+    // ==========================================
     function toggleNotifications() {
       document.getElementById('notif-dropdown').classList.toggle('hidden');
     }
@@ -1170,21 +1247,18 @@
     async function checkExpiryNotifications() {
       try {
         const res = await fetch(`${API_BASE}/medicines/alerts/expiring?days=90`);
+        if (!res.ok) return;
         const data = await res.json();
 
         const badge = document.getElementById('notif-badge');
         const summary = document.getElementById('notif-summary');
         const list = document.getElementById('notif-list');
-        const banner = document.getElementById('alert-banner');
-        const bannerText = document.getElementById('alert-banner-text');
-
         const expiringItems = Array.isArray(data) ? data : [];
 
         if (expiringItems.length === 0) {
           badge.classList.add('hidden');
           summary.innerText = '0 alerts';
           list.innerHTML = '<div class="p-4 text-center text-slate-400 text-xs">No expiring medicines found.</div>';
-          banner.classList.add('hidden');
           return;
         }
 
@@ -1192,26 +1266,10 @@
         badge.classList.remove('hidden');
         summary.innerText = `${expiringItems.length} item(s) require attention`;
 
-        let expiredCount = 0;
-        let criticalCount = 0;
-
         list.innerHTML = expiringItems.map(item => {
           const diffDays = Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-          let statusText = '';
-          let textColor = '';
-
-          if (diffDays < 0) {
-            expiredCount++;
-            statusText = `Expired (${Math.abs(diffDays)}d ago)`;
-            textColor = 'text-red-600 font-bold';
-          } else if (diffDays <= 30) {
-            criticalCount++;
-            statusText = `${diffDays}d left`;
-            textColor = 'text-rose-600 font-semibold';
-          } else {
-            statusText = `${diffDays}d left`;
-            textColor = 'text-amber-600 font-medium';
-          }
+          const statusText = diffDays < 0 ? `Expired (${Math.abs(diffDays)}d ago)` : `${diffDays}d left`;
+          const textColor = diffDays < 0 ? 'text-red-600 font-bold' : (diffDays <= 30 ? 'text-rose-600 font-semibold' : 'text-amber-600 font-medium');
 
           return `
             <div class="p-2.5 sm:p-3 hover:bg-slate-50 flex items-start justify-between gap-2">
@@ -1223,20 +1281,11 @@
             </div>
           `;
         }).join('');
-
-        if (expiredCount > 0 || criticalCount > 0) {
-          banner.classList.remove('hidden');
-          bannerText.innerText = `${expiredCount} batch(es) expired; ${criticalCount} critical (<30d).`;
-        } else {
-          banner.classList.add('hidden');
-        }
-
       } catch (err) {
-        console.error('Failed to load notifications:', err);
+        console.warn('Could not load notifications:', err);
       }
     }
 
-    // TAB MANAGEMENT
     function switchTab(tab) {
       document.getElementById('view-pos').classList.toggle('hidden', tab !== 'pos');
       document.getElementById('view-inventory').classList.toggle('hidden', tab !== 'inventory');
@@ -1266,7 +1315,9 @@
       if (tab === 'customers') fetchCustomers();
     }
 
-    // MULTI-BARCODE TAGGING & BATCH MANAGEMENT
+    // ==========================================
+    // MULTI-BARCODE & FORM CONTROLS
+    // ==========================================
     function handleBarcodeEntry(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1316,7 +1367,7 @@
       const statusBadge = document.getElementById('barcode-status');
 
       if (stagedBarcodes.length === 0) {
-        container.innerHTML = '<span class="text-[11px] text-amber-700 font-medium self-center">No barcode entered. Item will be flagged as "No Barcode" (can be added later).</span>';
+        container.innerHTML = '<span class="text-[11px] text-amber-700 font-medium self-center">No barcode entered. Item will be flagged as "No Barcode".</span>';
         statusBadge.innerText = '';
         return;
       }
@@ -1332,14 +1383,12 @@
       `).join('');
     }
 
-    // FORM MODE CONTROLS: EDITING & RESTOCKING
     function resetStockForm() {
       document.getElementById('medicine-form').reset();
       document.getElementById('form-medicine-id').value = '';
       document.getElementById('form-submit-mode').value = 'restock';
 
       document.getElementById('form-purchase-date').value = new Date().toISOString().split('T')[0];
-
       document.getElementById('stock-form-title').innerText = 'Add / Restock Batch';
       document.getElementById('stock-form-subtitle').innerText = 'Scan barcodes (optional) or enter details';
       document.getElementById('form-qty-label').innerText = 'Quantity to Add *';
@@ -1452,7 +1501,6 @@
       return `<span class="font-mono text-xs text-slate-700">${item.barcode}</span>`;
     }
 
-    // MODAL: ATTACH BARCODE
     function openAttachBarcodeModal(med) {
       document.getElementById('attach-modal-med-id').value = med._id;
       document.getElementById('attach-modal-med-title').innerText = `${med.name} (Batch: ${med.batchNumber})`;
@@ -1495,7 +1543,9 @@
       }
     }
 
-    // GET FILTERED MEDICINES LIST
+    // ==========================================
+    // MEDICINE DIRECTORY & FILTERING
+    // ==========================================
     function getFilteredMedicines() {
       const keyword = (document.getElementById('details-search-keyword')?.value || '').trim().toLowerCase();
       const startDate = document.getElementById('details-search-start-date')?.value || '';
@@ -1551,7 +1601,7 @@
       if (matchBadge) matchBadge.innerText = `Showing ${filtered.length} matching medicine(s)`;
 
       if (!filtered.length) {
-        const emptyMsg = '<tr><td colspan="8" class="p-6 text-center text-slate-400">No matching medicines found for the current query/filter.</td></tr>';
+        const emptyMsg = '<tr><td colspan="8" class="p-6 text-center text-slate-400">No matching medicines found.</td></tr>';
         if (tbody) tbody.innerHTML = emptyMsg;
         if (mobileContainer) mobileContainer.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">No matching medicines found.</div>';
         return;
@@ -1632,7 +1682,7 @@
 
     function openMedicineDetailsModal(med) {
       document.getElementById('modal-med-name').innerText = med.name;
-      document.getElementById('modal-med-generic').innerText = med.genericName || 'No Salt / Composition recorded';
+      document.getElementById('modal-med-generic').innerText = med.genericName || 'No Salt recorded';
       document.getElementById('modal-med-batch').innerText = med.batchNumber;
       
       const barcodeElement = document.getElementById('modal-med-barcode');
@@ -1671,7 +1721,9 @@
       document.getElementById('medicine-details-modal').classList.add('hidden');
     }
 
-    // DOWNLOAD REPORT AS JSON
+    // ==========================================
+    // EXPORT PDF & JSON
+    // ==========================================
     function downloadFilteredJson() {
       const items = getFilteredMedicines();
       if (!items.length) {
@@ -1688,7 +1740,6 @@
       downloadAnchor.remove();
     }
 
-    // DOWNLOAD REPORT AS TABULAR PDF
     function downloadFilteredPdf() {
       const items = getFilteredMedicines();
       if (!items.length) {
@@ -1776,7 +1827,6 @@
       doc.save(`Medicine_Stock_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     }
 
-    // UPLOAD JSON STOCKS FILE (BULK)
     async function handleJsonStockUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -1819,21 +1869,26 @@
       reader.readAsText(file);
     }
 
-    // INVENTORY API
+    // ==========================================
+    // INVENTORY API CALLS
+    // ==========================================
     async function fetchInventory() {
       try {
         const res = await fetch(`${API_BASE}/medicines`);
+        if (!res.ok) throw new Error('API offline');
         const data = await res.json();
         
         inventory = Array.isArray(data) ? data : [];
         renderInventory();
         renderMedicineDirectory();
         checkExpiryNotifications();
+        checkServerHealth();
       } catch (err) {
         console.error('Inventory Fetch Error:', err);
         inventory = [];
         renderInventory();
         renderMedicineDirectory();
+        checkServerHealth();
       }
     }
 
@@ -1984,7 +2039,9 @@
       }
     }
 
-    // LIVE MEDICINE NAME & BATCH NUMBER SEARCH IN POS
+    // ==========================================
+    // POS LOGIC & SEARCH
+    // ==========================================
     function handlePosMedicineSearch(query) {
       const suggestionsBox = document.getElementById('pos-medicine-suggestions');
       const q = query.trim().toLowerCase();
@@ -2003,7 +2060,7 @@
       ).slice(0, 6);
 
       if (matches.length === 0) {
-        suggestionsBox.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">No matching medicines or batches found</div>';
+        suggestionsBox.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">No matching medicines found</div>';
         suggestionsBox.classList.remove('hidden');
         return;
       }
@@ -2045,12 +2102,12 @@
       searchInput.value = '';
 
       if (new Date(med.expiryDate) < new Date()) {
-        alert(`BLOCKED: ${med.name} (Batch: ${med.batchNumber}) has expired and cannot be dispensed.`);
+        alert(`BLOCKED: ${med.name} (Batch: ${med.batchNumber}) has expired.`);
         return;
       }
 
       if (med.quantity <= 0) {
-        alert(`${med.name} (Batch: ${med.batchNumber}) is out of stock.`);
+        alert(`${med.name} is out of stock.`);
         return;
       }
 
@@ -2090,7 +2147,9 @@
       }
     });
 
+    // ==========================================
     // CAMERA SCANNER ENGINE
+    // ==========================================
     async function startCameraScanner(target) {
       activeScanTarget = target;
       const modal = document.getElementById('scanner-modal');
@@ -2240,19 +2299,12 @@
       } catch(e) {}
     }
 
-    // PHARMA STRIP 2D MATRIX & GS1 PARSER
     function parsePharmaStripCode(decodedRaw) {
-      let parsed = {
-        barcode: '',
-        batchNumber: '',
-        expiryDate: ''
-      };
-
+      let parsed = { barcode: '', batchNumber: '', expiryDate: '' };
       const raw = decodedRaw.trim();
 
       if (/^01\d{14}/.test(raw)) {
         parsed.barcode = raw.substring(2, 16);
-        
         const expIndex = raw.indexOf('17', 16);
         if (expIndex !== -1 && expIndex + 8 <= raw.length) {
           const yy = raw.substr(expIndex + 2, 2);
@@ -2260,7 +2312,6 @@
           const dd = raw.substr(expIndex + 6, 2);
           parsed.expiryDate = `20${yy}-${mm}-${dd === '00' ? '28' : dd}`;
         }
-
         const batchIndex = raw.indexOf('10', 16);
         if (batchIndex !== -1) {
           parsed.batchNumber = raw.substring(batchIndex + 2).split(/[\x1D\s]/)[0];
@@ -2276,7 +2327,6 @@
       return parsed;
     }
 
-    // CHECK EXISTING LOCAL MEDICINE ON BARCODE ENTER
     async function checkExistingMedicine(barcode) {
       const cleanBarcode = barcode.trim();
       if (!cleanBarcode || cleanBarcode.startsWith('NOCODE-')) return;
@@ -2304,7 +2354,6 @@
       } catch (err) {}
     }
 
-    // PROFIT MARGIN CALCULATOR
     function updateProfitMarginDisplay() {
       const cost = parseFloat(document.getElementById('form-cost-price')?.value);
       const sell = parseFloat(document.getElementById('form-price')?.value);
@@ -2329,8 +2378,6 @@
       }
     }
 
-    // CUSTOMER AUTO-LOOKUP & DUES
-    let lookupTimer = null;
     function handlePhoneInput(phone) {
       clearTimeout(lookupTimer);
       const suggestionsDiv = document.getElementById('phone-suggestions');
@@ -2370,6 +2417,8 @@
       }, 200);
     }
 
+    let lookupTimer = null;
+
     function selectCustomer(cust) {
       document.getElementById('pos-cust-phone').value = cust.phone;
       document.getElementById('pos-cust-name').value = cust.name;
@@ -2396,7 +2445,31 @@
       renderCart();
     }
 
-    // GLOBAL HARDWARE USB SCANNER LISTENER
+    function stopCameraScanner() {
+      if (qrEngine) {
+        try {
+          if (qrEngine.isScanning) qrEngine.stop();
+          qrEngine.clear();
+        } catch (err) {}
+        qrEngine = null;
+      }
+
+      const viewport = document.getElementById('camera-viewport');
+      if (viewport) {
+        const videos = viewport.querySelectorAll('video');
+        videos.forEach(v => {
+          if (v.srcObject) {
+            v.srcObject.getTracks().forEach(track => track.stop());
+            v.srcObject = null;
+          }
+        });
+        viewport.innerHTML = '';
+      }
+
+      document.getElementById('scanner-modal').classList.add('hidden');
+    }
+
+    // Hardware Scanner Listener
     let barcodeBuffer = '';
     let lastKeyTime = Date.now();
 
@@ -2437,7 +2510,6 @@
       }
     });
 
-    // POS SCAN INPUT LISTENER
     document.getElementById('pos-barcode-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const val = e.target.value.trim();
@@ -2448,7 +2520,491 @@
       }
     });
 
-    // CUSTOMER DIRECTORY API
+    async function addItemToCartByBarcode(barcode) {
+      try {
+        const res = await fetch(`${API_BASE}/medicines/scan/${encodeURIComponent(barcode)}`);
+        if (!res.ok) {
+          const err = await res.json();
+          alert(err.message || 'Item not found');
+          return;
+        }
+        const med = await res.json();
+
+        if (new Date(med.expiryDate) < new Date()) {
+          alert(`BLOCKED: ${med.name} (Batch: ${med.batchNumber}) has expired.`);
+          return;
+        }
+
+        if (med.quantity <= 0) {
+          alert(`${med.name} is out of stock.`);
+          return;
+        }
+
+        const expFormatted = med.expiryDate 
+          ? new Date(med.expiryDate).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) 
+          : 'N/A';
+
+        const existing = cart.find(i => i.medicineId === med._id);
+        if (existing) {
+          if (existing.quantity + 1 > med.quantity) {
+            alert(`Stock limit reached (${med.quantity} available)`);
+            return;
+          }
+          existing.quantity++;
+          existing.total = existing.quantity * existing.unitPrice;
+        } else {
+          cart.push({
+            medicineId: med._id,
+            name: med.name,
+            batchNumber: med.batchNumber,
+            expiryDate: expFormatted,
+            unitPrice: med.price,
+            quantity: 1,
+            maxStock: med.quantity,
+            total: med.price
+          });
+        }
+        renderCart();
+      } catch (err) {
+        alert('Lookup error.');
+      }
+    }
+
+    function updateCartQuantity(id, deltaOrVal) {
+      const item = cart.find(i => i.medicineId === id);
+      if (!item) return;
+
+      let newQty = typeof deltaOrVal === 'string' ? parseInt(deltaOrVal) || 1 : item.quantity + deltaOrVal;
+      if (newQty <= 0) {
+        removeFromCart(id);
+        return;
+      }
+
+      if (newQty > item.maxStock) {
+        alert(`Cannot exceed stock limit (${item.maxStock})`);
+        item.quantity = item.maxStock;
+      } else {
+        item.quantity = newQty;
+      }
+      item.total = item.quantity * item.unitPrice;
+      renderCart();
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(i => i.medicineId !== id);
+      renderCart();
+    }
+
+    function calculateDiscountAmount(subtotal) {
+      const discountInput = document.getElementById('pos-discount-value')?.value;
+      const val = discountInput === '' ? 0 : (parseFloat(discountInput) || 0);
+      const type = document.getElementById('pos-discount-type')?.value || 'percent';
+      let amount = (type === 'percent') ? (subtotal * val) / 100 : val;
+      return Math.min(Math.max(0, amount), subtotal);
+    }
+
+    function calculateDueBalance() {
+      const grandTotalStr = document.getElementById('pos-grand-total').innerText.replace('₹', '');
+      const grandTotal = parseFloat(grandTotalStr) || 0;
+      const paidInput = document.getElementById('pos-amount-paid').value;
+      const paid = paidInput === '' ? grandTotal : parseFloat(paidInput) || 0;
+      const remaining = Math.max(0, grandTotal - paid);
+      document.getElementById('pos-remaining-due').innerText = `₹${remaining.toFixed(2)}`;
+    }
+
+    function renderCart() {
+      const tbody = document.getElementById('cart-table-body');
+      const mobileList = document.getElementById('cart-mobile-container');
+
+      if (cart.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode or search above to add medicine.</td></tr>';
+        mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">Cart is empty. Scan barcode or search above to add medicine.</div>';
+        document.getElementById('pos-subtotal').innerText = '₹0.00';
+        document.getElementById('pos-discount-display').innerText = '-₹0.00';
+        document.getElementById('pos-tax').innerText = '₹0.00';
+        document.getElementById('pos-prev-due').innerText = '+₹0.00';
+        document.getElementById('pos-grand-total').innerText = '₹0.00';
+        document.getElementById('pos-amount-paid').value = '';
+        document.getElementById('pos-remaining-due').innerText = '₹0.00';
+        document.getElementById('checkout-btn').disabled = true;
+        return;
+      }
+
+      tbody.innerHTML = cart.map(item => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-semibold text-slate-800">${item.name}</td>
+          <td class="p-3 text-slate-500 font-mono text-xs">${item.batchNumber}</td>
+          <td class="p-3 text-amber-700 font-bold text-xs">${item.expiryDate}</td>
+          <td class="p-3 text-slate-700">₹${item.unitPrice.toFixed(2)}</td>
+          <td class="p-3 text-center">
+            <input type="number" min="1" max="${item.maxStock}" value="${item.quantity}" onchange="updateCartQuantity('${item.medicineId}', this.value)" class="w-16 border border-slate-300 rounded px-2 py-1 text-center font-bold" />
+            <span class="text-xs text-slate-400 block mt-0.5">Avail: ${item.maxStock}</span>
+          </td>
+          <td class="p-3 text-right font-bold text-slate-900">₹${item.total.toFixed(2)}</td>
+          <td class="p-3 text-center">
+            <button onclick="removeFromCart('${item.medicineId}')" class="text-rose-500 hover:text-rose-700 font-bold">&times;</button>
+          </td>
+        </tr>
+      `).join('');
+
+      mobileList.innerHTML = cart.map(item => `
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex justify-between items-center gap-2">
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-xs text-slate-800 truncate">${item.name}</h4>
+            <p class="text-[10px] text-slate-500 font-mono">B: ${item.batchNumber} | Exp: ${item.expiryDate} | ₹${item.unitPrice.toFixed(2)}</p>
+            <p class="text-xs font-bold text-emerald-700 mt-1">₹${item.total.toFixed(2)}</p>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button onclick="updateCartQuantity('${item.medicineId}', -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded font-bold text-xs active:bg-slate-200">-</button>
+            <span class="text-xs font-bold w-6 text-center">${item.quantity}</span>
+            <button onclick="updateCartQuantity('${item.medicineId}', 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded font-bold text-xs active:bg-slate-200">+</button>
+            <button onclick="removeFromCart('${item.medicineId}')" class="text-rose-500 p-1.5 text-base leading-none ml-1 font-bold">&times;</button>
+          </div>
+        </div>
+      `).join('');
+
+      const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+      const discountAmount = calculateDiscountAmount(subtotal);
+      const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+      const tax = Number((discountedSubtotal * 0.05).toFixed(2));
+      const grandTotal = Number((discountedSubtotal + tax + currentCustomerDue).toFixed(2));
+
+      document.getElementById('pos-subtotal').innerText = `₹${subtotal.toFixed(2)}`;
+      document.getElementById('pos-discount-display').innerText = `-₹${discountAmount.toFixed(2)}`;
+      document.getElementById('pos-tax').innerText = `₹${tax.toFixed(2)}`;
+      document.getElementById('pos-prev-due').innerText = `+₹${currentCustomerDue.toFixed(2)}`;
+      document.getElementById('pos-grand-total').innerText = `₹${grandTotal.toFixed(2)}`;
+      
+      calculateDueBalance();
+      document.getElementById('checkout-btn').disabled = false;
+    }
+
+    async function handleCheckout() {
+      if (cart.length === 0) return;
+
+      const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+      const discountAmount = calculateDiscountAmount(subtotal);
+      const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+      const tax = Number((discountedSubtotal * 0.05).toFixed(2));
+      const grandTotal = Number((discountedSubtotal + tax + currentCustomerDue).toFixed(2));
+
+      const paidInput = document.getElementById('pos-amount-paid').value;
+      const amountPaid = paidInput === '' ? grandTotal : Math.max(0, parseFloat(paidInput) || 0);
+      const remainingDue = Math.max(0, Number((grandTotal - amountPaid).toFixed(2)));
+
+      const payload = {
+        customerName: document.getElementById('pos-cust-name').value.trim() || 'Walk-in Customer',
+        customerPhone: document.getElementById('pos-cust-phone').value.trim(),
+        items: cart,
+        subtotal,
+        discount: Number(discountAmount.toFixed(2)),
+        tax,
+        previousDue: currentCustomerDue,
+        grandTotal,
+        amountPaid,
+        remainingDue
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/billing/checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          alert('Checkout error: ' + (err.error || 'Server rejected checkout'));
+          return;
+        }
+
+        const bill = await res.json();
+        generatePdf(bill);
+
+        cart = [];
+        currentCustomerDue = 0;
+        updateDueAlert();
+        document.getElementById('pos-cust-name').value = '';
+        document.getElementById('pos-cust-phone').value = '';
+        document.getElementById('pos-discount-value').value = '10';
+        document.getElementById('pos-discount-type').value = 'percent';
+        document.getElementById('pos-amount-paid').value = '';
+        renderCart();
+        checkExpiryNotifications();
+        alert(`Sale completed! Invoice ${bill.invoiceNumber} downloaded.`);
+      } catch (err) {
+        alert('Server network error during checkout.');
+      }
+    }
+
+    function generatePdf(billData) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      doc.setFillColor(5, 150, 105);
+      doc.rect(0, 0, pageWidth, 8, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(15, 23, 42);
+      doc.text('EVERGREEN PHARMACY', 40, 48);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Retail Drug License No: DL-2024-WB-89210 | GSTIN: 19ABCDE1234F1Z5', 40, 62);
+      doc.text('Tagra, Ramnagar, Tarakeswar, PIN-712410 | Ph: +91 98765 43210', 40, 74);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(5, 150, 105);
+      doc.text('TAX INVOICE / CASH MEMO', pageWidth - 40, 48, { align: 'right' });
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(1);
+      doc.line(40, 86, pageWidth - 40, 86);
+
+      const boxY = 96;
+      const boxHeight = 52;
+      const colWidth = (pageWidth - 80 - 15) / 2;
+
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(40, boxY, colWidth, boxHeight, 4, 4, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(40, boxY, colWidth, boxHeight, 4, 4, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('PATIENT / CUSTOMER DETAILS', 50, boxY + 14);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(15, 23, 42);
+      doc.text(billData.customerName || 'Walk-in Customer', 50, boxY + 28);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Contact: ${billData.customerPhone || 'Not Provided'}`, 50, boxY + 42);
+
+      const rightX = 40 + colWidth + 15;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(rightX, boxY, colWidth, boxHeight, 4, 4, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(rightX, boxY, colWidth, boxHeight, 4, 4, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('INVOICE INFORMATION', rightX + 10, boxY + 14);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(5, 150, 105);
+      doc.text(billData.invoiceNumber, rightX + 10, boxY + 28);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      const formattedDate = new Date(billData.createdAt || Date.now()).toLocaleString('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+      doc.text(`Date: ${formattedDate}`, rightX + 10, boxY + 42);
+
+      const tableRows = billData.items.map((it, idx) => {
+        let expDisplay = it.expiryDate || 'N/A';
+        if (it.expiryDate && it.expiryDate.includes('-')) {
+          const d = new Date(it.expiryDate);
+          expDisplay = !isNaN(d) ? d.toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) : it.expiryDate;
+        }
+
+        return [
+          idx + 1,
+          it.name,
+          it.batchNumber,
+          expDisplay,
+          it.quantity,
+          `₹${Number(it.unitPrice).toFixed(2)}`,
+          `₹${Number(it.total).toFixed(2)}`
+        ];
+      });
+
+      doc.autoTable({
+        startY: 160,
+        margin: { left: 40, right: 40 },
+        head: [['#', 'Item / Medicine Description', 'Batch', 'Exp Date', 'Qty', 'Unit Price', 'Amount']],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [15, 23, 42],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 8.5,
+          halign: 'left'
+        },
+        bodyStyles: {
+          fontSize: 8.5,
+          textColor: [30, 41, 59],
+          cellPadding: 6
+        },
+        columnStyles: {
+          0: { cellWidth: 24, halign: 'center' },
+          1: { cellWidth: 'auto' },
+          2: { cellWidth: 65, font: 'courier' },
+          3: { cellWidth: 55, halign: 'center', fontStyle: 'bold', textColor: [180, 83, 9] },
+          4: { cellWidth: 40, halign: 'center' },
+          5: { cellWidth: 60, halign: 'right' },
+          6: { cellWidth: 65, halign: 'right', fontStyle: 'bold' }
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        }
+      });
+
+      let finalY = doc.lastAutoTable.finalY + 16;
+      const summaryBoxWidth = 220;
+      const summaryBoxX = pageWidth - 40 - summaryBoxWidth;
+
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(summaryBoxX, finalY, summaryBoxWidth, 115, 4, 4, 'FD');
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+
+      let lineY = finalY + 16;
+      doc.text('Subtotal:', summaryBoxX + 10, lineY);
+      doc.text(`₹${Number(billData.subtotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+
+      if (billData.discount && billData.discount > 0) {
+        lineY += 14;
+        doc.setTextColor(220, 38, 38);
+        doc.text('Discount Applied:', summaryBoxX + 10, lineY);
+        doc.text(`- ₹${Number(billData.discount).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+      }
+
+      lineY += 14;
+      doc.setTextColor(71, 85, 105);
+      doc.text('Applicable GST (5%):', summaryBoxX + 10, lineY);
+      doc.text(`₹${Number(billData.tax).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+
+      if (billData.previousDue && billData.previousDue > 0) {
+        lineY += 14;
+        doc.setTextColor(180, 83, 9);
+        doc.text('Previous Outstanding Due:', summaryBoxX + 10, lineY);
+        doc.text(`+ ₹${Number(billData.previousDue).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+      }
+
+      lineY += 8;
+      doc.setDrawColor(203, 213, 225);
+      doc.line(summaryBoxX + 10, lineY, pageWidth - 50, lineY);
+
+      lineY += 14;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Grand Total:', summaryBoxX + 10, lineY);
+      doc.setTextColor(5, 150, 105);
+      doc.text(`₹${Number(billData.grandTotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+
+      lineY += 14;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Amount Received:', summaryBoxX + 10, lineY);
+      doc.text(`₹${Number(billData.amountPaid || billData.grandTotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+
+      if (billData.remainingDue && billData.remainingDue > 0) {
+        lineY += 14;
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(220, 38, 38);
+        doc.text('Current Balance Due:', summaryBoxX + 10, lineY);
+        doc.text(`₹${Number(billData.remainingDue).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+      }
+
+      const footerY = Math.max(finalY + 135, 740);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('TERMS & CONDITIONS:', 40, footerY);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text('1. Please verify batch & expiry details before leaving counter.', 40, footerY + 12);
+      doc.text('2. Refrigerated & Schedule items cannot be returned.', 40, footerY + 22);
+      doc.text('3. Outstanding dues must be cleared on or before next purchase.', 40, footerY + 32);
+
+      const sigX = pageWidth - 160;
+      doc.setDrawColor(203, 213, 225);
+      doc.line(sigX, footerY + 20, pageWidth - 40, footerY + 20);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Dispensing Pharmacist', sigX + 15, footerY + 32);
+
+      doc.save(`${billData.invoiceNumber}.pdf`);
+    }
+
+    async function fetchBills() {
+      try {
+        const res = await fetch(`${API_BASE}/billing`);
+        const data = await res.json();
+        bills = Array.isArray(data) ? data : [];
+
+        const tbody = document.getElementById('bills-table-body');
+        const mobileList = document.getElementById('bills-mobile-container');
+
+        if (!bills.length) {
+          if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">No invoices recorded yet.</td></tr>';
+          if (mobileList) mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">No invoices recorded yet.</div>';
+          return;
+        }
+
+        if (tbody) {
+          tbody.innerHTML = bills.map(b => `
+            <tr class="hover:bg-slate-50">
+              <td class="p-3 font-mono font-bold text-emerald-700">${b.invoiceNumber}</td>
+              <td class="p-3 text-slate-500 text-xs">${new Date(b.createdAt).toLocaleDateString()}</td>
+              <td class="p-3 text-slate-800">${b.customerName} <span class="text-xs text-slate-400 block font-mono">${b.customerPhone || ''}</span></td>
+              <td class="p-3 text-slate-600 text-xs">${b.items ? b.items.length : 0} product(s)</td>
+              <td class="p-3 text-right font-bold text-slate-900">₹${Number(b.grandTotal).toFixed(2)}</td>
+              <td class="p-3 text-right font-bold ${b.remainingDue > 0 ? 'text-rose-600' : 'text-slate-400'}">
+                ${b.remainingDue > 0 ? '₹' + Number(b.remainingDue).toFixed(2) : 'Cleared'}
+              </td>
+              <td class="p-3 text-center">
+                <button onclick='generatePdf(${JSON.stringify(b)})' class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">Download PDF</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        if (mobileList) {
+          mobileList.innerHTML = bills.map(b => `
+            <div class="bg-white border border-slate-200 rounded-lg p-3 flex justify-between items-center">
+              <div>
+                <p class="font-mono font-bold text-xs text-emerald-700">${b.invoiceNumber}</p>
+                <p class="text-[11px] text-slate-800 font-semibold">${b.customerName} (${b.customerPhone || 'No Phone'})</p>
+                <p class="text-[10px] text-slate-400">${new Date(b.createdAt).toLocaleDateString()} • ${b.items ? b.items.length : 0} item(s)</p>
+                ${b.remainingDue > 0 ? `<span class="text-[10px] font-bold text-rose-600">Pending Due: ₹${b.remainingDue.toFixed(2)}</span>` : ''}
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-xs text-slate-900">₹${Number(b.grandTotal).toFixed(2)}</p>
+                <button onclick='generatePdf(${JSON.stringify(b)})' class="mt-1 text-[11px] font-bold text-emerald-600 active:text-emerald-800">Download PDF</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Fetch Bills Error:', err);
+      }
+    }
+
     async function fetchCustomers() {
       try {
         const res = await fetch(`${API_BASE}/customers`);
@@ -2514,6 +3070,7 @@
     }
 
     // INITIAL LOAD
+    checkServerHealth();
     fetchInventory();
     loadSavedBillChecklist();
   </script>
