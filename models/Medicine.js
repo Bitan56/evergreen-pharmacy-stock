@@ -9,7 +9,9 @@ const medicineSchema = new mongoose.Schema(
     quantity: { type: Number, required: true, min: 0 },
     costPrice: { type: Number, required: true, min: 0 },
     price: { type: Number, required: true, min: 0 },
-    purchaseDate: { type: Date, default: Date.now }, // <--- Added Purchase Date field
+    dealerName: { type: String, default: '', index: true }, // <--- Dealer / Supplier Name
+    purchaseInvoiceNumber: { type: String, default: '', index: true }, // <--- Purchase Invoice No.
+    purchaseDate: { type: Date, default: Date.now },
     expiryDate: { type: Date, required: true, index: true },
     rackLocation: { type: String, default: 'General Shelf' }
   },
