@@ -298,4 +298,37 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// POST /api/medicines/bulk-delete - Delete multiple medicines by ID
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Array of medicine IDs is required.' });
+    }
+
+    const result = await Medicine.deleteMany({ _id: { $in: ids } });
+    res.status(200).json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} medicine(s).`,
+      deletedCount: result.deletedCount
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/medicines/alerts/low-stock - Fetch medicines with quantity < threshold (default: 2)
+router.get('/alerts/low-stock', async (req, res) => {
+  try {
+    const threshold = parseInt(req.query.threshold) || 2;
+    const lowStockMedicines = await Medicine.find({
+      quantity: { $lt: threshold }
+    }).sort({ quantity: 1, name: 1 });
+
+    res.status(200).json(lowStockMedicines);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
