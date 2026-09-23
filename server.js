@@ -4,29 +4,26 @@ if (!globalThis.crypto) globalThis.crypto = crypto;
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const connectDB = require('./db');
 const medicineRoutes = require('./routes/medicineRoutes');
 const billingRoutes = require('./routes/billingRoutes');
 const customerRoutes = require('./routes/customerRoutes');
-const billRoutes = require('./routes/billRoutes'); // New: Bill verification & matching
+const billRoutes = require('./routes/billRoutes');
 
 const app = express();
 
 app.use(cors());
-
-// Support larger payloads for bulk JSON uploads & invoice checklists
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static assets from both root directory and public folder
+// Static file serving from both root and public directories
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database connection gatekeeper middleware
+// Database middleware (bypassed for health check, asset requests, and base load)
 app.use(async (req, res, next) => {
-  // Skip DB connection for static frontend files, root, and health checks
   if (
     req.path === '/' || 
     req.path === '/index.html' || 
@@ -49,9 +46,9 @@ app.use(async (req, res, next) => {
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/customers', customerRoutes);
-app.use('/api/bills', billRoutes); // New: Mounts bill matching, tracking, and item checkouts
+app.use('/api/bills', billRoutes);
 
-// Health check endpoint for the frontend status indicator
+// Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
     await connectDB();
@@ -69,8 +66,8 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Fallback to index.html (checks root first, then public directory)
-app.get('/', (req, res) => {
+// SPA fallback without regex route crash
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'), (err) => {
     if (err) {
       res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -80,7 +77,7 @@ app.get('/', (req, res) => {
 
 module.exports = app;
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => console.log(`Pharmacy server running on http://localhost:${PORT}`));
 }
