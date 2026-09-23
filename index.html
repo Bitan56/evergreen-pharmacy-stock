@@ -208,7 +208,6 @@
               <span id="pos-subtotal" class="font-bold text-slate-800">₹0.00</span>
             </div>
 
-            <!-- Discount Field (10% default) -->
             <div class="flex items-center justify-between gap-2">
               <span class="text-xs sm:text-sm text-slate-600">Discount:</span>
               <div class="flex items-center gap-1.5 w-44">
@@ -281,15 +280,28 @@
 
     <!-- ================= TAB 2: INVENTORY & STOCKING ================= -->
     <section id="view-inventory" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- RESTOCK FORM -->
       <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
         <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
           <div>
             <h2 id="stock-form-title" class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Batch</h2>
-            <p id="stock-form-subtitle" class="text-[10px] text-slate-500">Scan barcodes (optional) or type details directly</p>
+            <p id="stock-form-subtitle" class="text-[10px] text-slate-500">Scan barcodes (optional) or enter details</p>
           </div>
-          <button type="button" onclick="resetStockForm()" id="stock-cancel-edit-btn" class="hidden text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded">
-            Reset
-          </button>
+          <div class="flex items-center gap-1.5">
+            <!-- MATCH MEDICINE BUTTON -->
+            <button 
+              type="button" 
+              onclick="openBillMatchingModal()" 
+              class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-lg border border-emerald-200 transition flex items-center gap-1"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              <span>Match Medicine</span>
+            </button>
+            <button type="button" onclick="resetStockForm()" id="stock-cancel-edit-btn" class="hidden text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1.5 rounded">
+              Reset
+            </button>
+          </div>
         </div>
 
         <form id="medicine-form" onsubmit="handleSaveMedicine(event)" class="space-y-3 sm:space-y-4">
@@ -429,7 +441,7 @@
         </form>
       </div>
 
-      <!-- Current Inventory Stock Table -->
+      <!-- CURRENT INVENTORY STOCK TABLE -->
       <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm flex flex-col justify-between">
         <div>
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
@@ -532,7 +544,6 @@
             </div>
           </div>
 
-          <!-- Export Action Buttons -->
           <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
             <span id="directory-match-count" class="text-xs font-bold text-slate-600">Showing 0 matching medicines</span>
             
@@ -679,6 +690,97 @@
     </div>
   </div>
 
+  <!-- DEDICATED BILL / INVOICE MEDICINE MATCHING MODAL -->
+  <div id="bill-matching-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-3 sm:p-5 hidden">
+    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-bold text-base sm:text-lg text-slate-800">Bill Medicine Verification & Matching</h3>
+            <span id="bill-progress-badge" class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">No bill active</span>
+          </div>
+          <p class="text-xs text-slate-500">Upload purchase bill JSON, filter with search, check off items, and log shortages</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="cursor-pointer inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            <span>Upload Bill JSON</span>
+            <input type="file" id="bill-json-input" accept=".json" onchange="handleBillJsonUpload(event)" class="hidden" />
+          </label>
+
+          <button 
+            type="button" 
+            id="bill-clear-btn" 
+            onclick="eraseActiveBillChecklist()" 
+            class="hidden text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold px-2.5 py-1.5 rounded-lg border border-rose-200 transition"
+          >
+            Erase Bill
+          </button>
+
+          <button onclick="closeBillMatchingModal()" class="text-slate-400 hover:text-slate-600 p-1 text-2xl font-bold leading-none">&times;</button>
+        </div>
+      </div>
+
+      <!-- Search & Meta Bar -->
+      <div class="p-3 sm:p-4 border-b border-slate-100 bg-white space-y-2">
+        <div id="bill-meta-bar" class="hidden text-xs flex flex-wrap justify-between items-center gap-2 text-slate-600 pb-1">
+          <div>
+            <span class="font-bold text-slate-800" id="bill-meta-invoice">Invoice: -</span> • 
+            <span id="bill-meta-dealer">Dealer: -</span>
+          </div>
+          <span class="text-[11px] text-slate-400">Stored automatically in local storage</span>
+        </div>
+
+        <!-- Medicine Matching Search Bar -->
+        <div class="relative">
+          <input 
+            type="text" 
+            id="bill-matching-search" 
+            oninput="renderBillChecklist()" 
+            placeholder="Search medicine by brand name, salt composition, or batch in this bill..." 
+            class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" 
+          />
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+      </div>
+
+      <!-- Checklist Table Body -->
+      <div class="flex-1 overflow-y-auto p-2 sm:p-4">
+        <table class="w-full text-left text-xs sm:text-sm">
+          <thead class="bg-slate-50 text-slate-600 text-[11px] font-bold uppercase border-b border-slate-200 sticky top-0 z-10">
+            <tr>
+              <th class="p-2.5 text-center w-12">Match</th>
+              <th class="p-2.5">Medicine & Salt</th>
+              <th class="p-2.5">Batch</th>
+              <th class="p-2.5 text-center">Billed Qty</th>
+              <th class="p-2.5 text-center w-28">Received Qty</th>
+              <th class="p-2.5">Discrepancy / Shortage Notes</th>
+            </tr>
+          </thead>
+          <tbody id="bill-checklist-body" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="6" class="p-8 text-center text-slate-400 text-xs">
+                No invoice uploaded. Click <b>Upload Bill JSON</b> to load and verify line items.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-3 sm:p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+        <span id="bill-search-count" class="text-xs text-slate-500">0 items displayed</span>
+        <button onclick="closeBillMatchingModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs transition">
+          Done / Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ATTACH BARCODE MODAL (For Unmarked Items) -->
   <div id="attach-barcode-modal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl relative space-y-4">
@@ -799,6 +901,259 @@
     let activeScanTarget = 'pos';
     let currentCustomerDue = 0;
     let stagedBarcodes = [];
+
+    // ==========================================
+    // BILL / INVOICE MATCHING (LOCALSTORAGE)
+    // ==========================================
+    const STORAGE_KEY_BILL = 'evergreen_active_bill_checklist';
+
+    let activeBillData = {
+      invoiceNumber: '',
+      dealerName: '',
+      items: []
+    };
+
+    function openBillMatchingModal() {
+      document.getElementById('bill-matching-modal').classList.remove('hidden');
+      renderBillChecklist();
+      setTimeout(() => document.getElementById('bill-matching-search')?.focus(), 100);
+    }
+
+    function closeBillMatchingModal() {
+      document.getElementById('bill-matching-modal').classList.add('hidden');
+    }
+
+    function loadSavedBillChecklist() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_BILL);
+        if (raw) {
+          activeBillData = JSON.parse(raw);
+        }
+      } catch (err) {
+        console.warn('Could not read saved bill checklist from localStorage:', err);
+      }
+    }
+
+    function saveBillChecklistToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY_BILL, JSON.stringify(activeBillData));
+      } catch (err) {
+        console.warn('Could not save bill checklist to localStorage:', err);
+      }
+    }
+
+    function handleBillJsonUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          
+          let invoiceNumber = 'N/A';
+          let dealerName = 'N/A';
+          let items = [];
+
+          if (Array.isArray(parsed)) {
+            items = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            invoiceNumber = parsed.invoiceNumber || parsed.billNumber || parsed.invoice || 'N/A';
+            dealerName = parsed.dealerName || parsed.dealer || parsed.supplier || 'N/A';
+            items = Array.isArray(parsed.items) ? parsed.items : (Array.isArray(parsed.medicines) ? parsed.medicines : []);
+          }
+
+          if (!items.length) {
+            alert('Could not find medicine items in uploaded JSON file. Please ensure it has a list of medicines.');
+            return;
+          }
+
+          activeBillData = {
+            invoiceNumber,
+            dealerName,
+            items: items.map((it, idx) => ({
+              id: idx + 1,
+              name: it.name || 'Unnamed Medicine',
+              genericName: it.genericName || '',
+              batchNumber: it.batchNumber || '',
+              billedQty: Number(it.quantity || it.qty || 1),
+              receivedQty: Number(it.receivedQty || it.quantity || it.qty || 1),
+              costPrice: Number(it.costPrice || it.rate || 0),
+              price: Number(it.price || it.mrp || 0),
+              expiryDate: it.expiryDate || '',
+              barcode: it.barcode || '',
+              matched: false,
+              notes: ''
+            }))
+          };
+
+          saveBillChecklistToStorage();
+          renderBillChecklist();
+          alert(`Bill checklist loaded with ${activeBillData.items.length} items!`);
+        } catch (err) {
+          alert('Failed to parse bill JSON file. Please verify format.');
+        } finally {
+          e.target.value = '';
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    function renderBillChecklist() {
+      const tbody = document.getElementById('bill-checklist-body');
+      const metaBar = document.getElementById('bill-meta-bar');
+      const metaInvoice = document.getElementById('bill-meta-invoice');
+      const metaDealer = document.getElementById('bill-meta-dealer');
+      const progressBadge = document.getElementById('bill-progress-badge');
+      const clearBtn = document.getElementById('bill-clear-btn');
+      const searchCount = document.getElementById('bill-search-count');
+      const searchVal = (document.getElementById('bill-matching-search')?.value || '').trim().toLowerCase();
+
+      if (!activeBillData || !activeBillData.items || !activeBillData.items.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-8 text-center text-slate-400 text-xs">
+              No invoice uploaded. Click <b>Upload Bill JSON</b> above to load and verify line items.
+            </td>
+          </tr>
+        `;
+        metaBar.classList.add('hidden');
+        progressBadge.innerText = 'No bill active';
+        progressBadge.className = 'bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded';
+        clearBtn.classList.add('hidden');
+        if (searchCount) searchCount.innerText = '0 items displayed';
+        return;
+      }
+
+      metaBar.classList.remove('hidden');
+      clearBtn.classList.remove('hidden');
+      metaInvoice.innerText = `Invoice: ${activeBillData.invoiceNumber}`;
+      metaDealer.innerText = `Dealer: ${activeBillData.dealerName}`;
+
+      const totalItems = activeBillData.items.length;
+      const matchedCount = activeBillData.items.filter(i => i.matched).length;
+      const allDone = (matchedCount === totalItems);
+
+      progressBadge.innerText = `${matchedCount} of ${totalItems} items verified`;
+      progressBadge.className = allDone
+        ? 'bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200'
+        : 'bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-200';
+
+      // Filter by search bar query
+      const filtered = activeBillData.items.filter(item => {
+        if (!searchVal) return true;
+        return (item.name && item.name.toLowerCase().includes(searchVal)) ||
+               (item.genericName && item.genericName.toLowerCase().includes(searchVal)) ||
+               (item.batchNumber && item.batchNumber.toLowerCase().includes(searchVal));
+      });
+
+      if (searchCount) searchCount.innerText = `Showing ${filtered.length} of ${totalItems} item(s)`;
+
+      if (!filtered.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-8 text-center text-slate-400 text-xs">
+              No medicines match "<b>${searchVal}</b>" in this bill.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        const originalIndex = activeBillData.items.findIndex(i => i.id === item.id);
+        const isFull = item.matched && Number(item.receivedQty) >= Number(item.billedQty);
+        const isPartial = item.matched && Number(item.receivedQty) < Number(item.billedQty);
+
+        let rowBg = 'hover:bg-slate-50';
+        if (isFull) rowBg = 'bg-emerald-50/50 hover:bg-emerald-50';
+        if (isPartial) rowBg = 'bg-amber-50/50 hover:bg-amber-50';
+
+        return `
+          <tr class="${rowBg} transition">
+            <td class="p-2.5 text-center">
+              <input 
+                type="checkbox" 
+                ${item.matched ? 'checked' : ''} 
+                onchange="toggleBillItemMatch(${originalIndex}, this.checked)" 
+                class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+              />
+            </td>
+            <td class="p-2.5">
+              <span class="font-bold text-slate-800 block">${item.name}</span>
+              <span class="text-[10px] text-slate-400 font-mono">${item.genericName || 'No salt recorded'}</span>
+            </td>
+            <td class="p-2.5 font-mono text-slate-700">${item.batchNumber || '-'}</td>
+            <td class="p-2.5 text-center font-bold text-slate-800">${item.billedQty}</td>
+            <td class="p-2.5 text-center">
+              <input 
+                type="number" 
+                min="0" 
+                max="${item.billedQty * 2}" 
+                value="${item.receivedQty}" 
+                onchange="updateBillReceivedQty(${originalIndex}, this.value)" 
+                class="w-16 border border-slate-300 rounded px-1.5 py-0.5 text-center font-bold text-xs bg-white focus:ring-1 focus:ring-emerald-500" 
+              />
+            </td>
+            <td class="p-2.5">
+              <input 
+                type="text" 
+                value="${item.notes || ''}" 
+                onchange="updateBillItemNotes(${originalIndex}, this.value)" 
+                placeholder="${item.receivedQty < item.billedQty ? 'Note reason for shortage...' : 'Optional notes...'}" 
+                class="w-full border ${item.receivedQty < item.billedQty ? 'border-amber-300 bg-amber-50/40 text-amber-900' : 'border-slate-200 bg-white'} rounded px-2 py-1 text-xs focus:ring-1 focus:ring-emerald-500" 
+              />
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function toggleBillItemMatch(index, isChecked) {
+      if (activeBillData.items[index]) {
+        activeBillData.items[index].matched = isChecked;
+        saveBillChecklistToStorage();
+        renderBillChecklist();
+      }
+    }
+
+    function updateBillReceivedQty(index, val) {
+      if (activeBillData.items[index]) {
+        const qty = Math.max(0, parseInt(val) || 0);
+        activeBillData.items[index].receivedQty = qty;
+        if (qty < activeBillData.items[index].billedQty && !activeBillData.items[index].notes) {
+          activeBillData.items[index].notes = `${activeBillData.items[index].billedQty - qty} unit(s) missing from delivery`;
+        }
+        saveBillChecklistToStorage();
+        renderBillChecklist();
+      }
+    }
+
+    function updateBillItemNotes(index, val) {
+      if (activeBillData.items[index]) {
+        activeBillData.items[index].notes = val.trim();
+        saveBillChecklistToStorage();
+      }
+    }
+
+    function eraseActiveBillChecklist() {
+      const totalItems = activeBillData.items ? activeBillData.items.length : 0;
+      const matchedCount = activeBillData.items ? activeBillData.items.filter(i => i.matched).length : 0;
+
+      let msg = 'Are you sure you want to clear and erase this invoice checklist?';
+      if (matchedCount < totalItems) {
+        msg = `Warning: ${totalItems - matchedCount} item(s) are still unverified! Clear anyway?`;
+      }
+
+      if (!confirm(msg)) return;
+
+      localStorage.removeItem(STORAGE_KEY_BILL);
+      activeBillData = { invoiceNumber: '', dealerName: '', items: [] };
+      document.getElementById('bill-matching-search').value = '';
+      renderBillChecklist();
+      alert('Invoice checklist erased.');
+    }
 
     // NOTIFICATIONS
     function toggleNotifications() {
@@ -986,7 +1341,7 @@
       document.getElementById('form-purchase-date').value = new Date().toISOString().split('T')[0];
 
       document.getElementById('stock-form-title').innerText = 'Add / Restock Batch';
-      document.getElementById('stock-form-subtitle').innerText = 'Scan barcodes (optional) or type details directly';
+      document.getElementById('stock-form-subtitle').innerText = 'Scan barcodes (optional) or enter details';
       document.getElementById('form-qty-label').innerText = 'Quantity to Add *';
       document.getElementById('form-submit-btn').innerText = 'Save / Update Batch Stock';
       document.getElementById('form-submit-btn').className = 'w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm';
@@ -1030,7 +1385,6 @@
         document.getElementById('form-expiry').value = med.expiryDate.split('T')[0];
       }
 
-      // Check if it's marked as No Barcode
       const isMarkedNoCode = isItemUnmarked(med);
       stagedBarcodes = (!isMarkedNoCode && med.barcode) ? [med.barcode] : [];
       renderBarcodeTags();
@@ -1078,7 +1432,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // HELPER: Detect if item is flagged as "No Barcode"
     function isItemUnmarked(item) {
       return item.hasBarcode === false || (item.barcode && item.barcode.startsWith('NOCODE-'));
     }
@@ -1099,7 +1452,7 @@
       return `<span class="font-mono text-xs text-slate-700">${item.barcode}</span>`;
     }
 
-    // MODAL: ATTACH BARCODE TO UNMARKED MEDICINE
+    // MODAL: ATTACH BARCODE
     function openAttachBarcodeModal(med) {
       document.getElementById('attach-modal-med-id').value = med._id;
       document.getElementById('attach-modal-med-title').innerText = `${med.name} (Batch: ${med.batchNumber})`;
@@ -1189,7 +1542,6 @@
       renderMedicineDirectory();
     }
 
-    // MEDICINE DIRECTORY & DETAILS LOOKUP
     function renderMedicineDirectory() {
       const filtered = getFilteredMedicines();
       const tbody = document.getElementById('directory-table-body');
@@ -1424,7 +1776,7 @@
       doc.save(`Medicine_Stock_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     }
 
-    // UPLOAD JSON STOCKS FILE
+    // UPLOAD JSON STOCKS FILE (BULK)
     async function handleJsonStockUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -1552,7 +1904,7 @@
               <span class="text-slate-500">Sell: <b class="text-emerald-700">₹${Number(item.price).toFixed(2)}</b></span>
               <div class="space-x-1">
                 <button onclick='loadMedicineForRestock(${JSON.stringify(item)})' class="text-emerald-700 text-xs font-bold px-2 py-0.5 bg-emerald-50 rounded">
-                  + Restock
+                  + Add
                 </button>
                 <button onclick='loadMedicineForEdit(${JSON.stringify(item)})' class="text-blue-700 text-xs font-bold px-2 py-0.5 bg-blue-50 rounded">
                   Edit
@@ -1573,7 +1925,6 @@
       const medicineId = document.getElementById('form-medicine-id').value;
       const submitMode = document.getElementById('form-submit-mode').value;
 
-      // When saving without barcode, assign an internal NOCODE- prefix
       let finalBarcodes = [...stagedBarcodes];
       let itemHasBarcode = true;
 
@@ -1699,7 +2050,7 @@
       }
 
       if (med.quantity <= 0) {
-        alert(`${med.name} is out of stock.`);
+        alert(`${med.name} (Batch: ${med.batchNumber}) is out of stock.`);
         return;
       }
 
@@ -1889,6 +2240,42 @@
       } catch(e) {}
     }
 
+    // PHARMA STRIP 2D MATRIX & GS1 PARSER
+    function parsePharmaStripCode(decodedRaw) {
+      let parsed = {
+        barcode: '',
+        batchNumber: '',
+        expiryDate: ''
+      };
+
+      const raw = decodedRaw.trim();
+
+      if (/^01\d{14}/.test(raw)) {
+        parsed.barcode = raw.substring(2, 16);
+        
+        const expIndex = raw.indexOf('17', 16);
+        if (expIndex !== -1 && expIndex + 8 <= raw.length) {
+          const yy = raw.substr(expIndex + 2, 2);
+          const mm = raw.substr(expIndex + 4, 2);
+          const dd = raw.substr(expIndex + 6, 2);
+          parsed.expiryDate = `20${yy}-${mm}-${dd === '00' ? '28' : dd}`;
+        }
+
+        const batchIndex = raw.indexOf('10', 16);
+        if (batchIndex !== -1) {
+          parsed.batchNumber = raw.substring(batchIndex + 2).split(/[\x1D\s]/)[0];
+        }
+      } else if (raw.includes('|') || raw.includes(',')) {
+        const parts = raw.split(/[|,]/);
+        parsed.barcode = parts[0] || raw;
+        parsed.batchNumber = parts[1] || '';
+      } else {
+        parsed.barcode = raw;
+      }
+
+      return parsed;
+    }
+
     // CHECK EXISTING LOCAL MEDICINE ON BARCODE ENTER
     async function checkExistingMedicine(barcode) {
       const cleanBarcode = barcode.trim();
@@ -2009,50 +2396,12 @@
       renderCart();
     }
 
-    // EXPIRY STATUS BADGE
-    function getExpiryBadge(dateStr) {
-      const diffDays = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
-      if (diffDays < 0) {
-        return `<span class="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Expired (${Math.abs(diffDays)}d ago)</span>`;
-      } else if (diffDays <= 30) {
-        return `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Critical (${diffDays}d)</span>`;
-      } else if (diffDays <= 90) {
-        return `<span class="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Expiring (${diffDays}d)</span>`;
-      }
-      return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
-    }
-
-    // STOP CAMERA SCANNER & HARD RESET
-    async function stopCameraScanner() {
-      if (qrEngine) {
-        try {
-          if (qrEngine.isScanning) await qrEngine.stop();
-          qrEngine.clear();
-        } catch (err) {}
-        qrEngine = null;
-      }
-
-      const viewport = document.getElementById('camera-viewport');
-      if (viewport) {
-        const videos = viewport.querySelectorAll('video');
-        videos.forEach(v => {
-          if (v.srcObject) {
-            v.srcObject.getTracks().forEach(track => track.stop());
-            v.srcObject = null;
-          }
-        });
-        viewport.innerHTML = '';
-      }
-
-      document.getElementById('scanner-modal').classList.add('hidden');
-    }
-
     // GLOBAL HARDWARE USB SCANNER LISTENER
     let barcodeBuffer = '';
     let lastKeyTime = Date.now();
 
     window.addEventListener('keydown', (e) => {
-      if (['pos-cust-name', 'pos-cust-phone', 'pos-amount-paid', 'pos-medicine-search', 'form-name', 'form-generic', 'form-batch', 'form-dealer-name', 'form-purchase-invoice', 'form-cost-price', 'form-price', 'form-rack', 'inventory-search', 'customer-search', 'details-search-keyword', 'details-search-invoices', 'attach-modal-barcode-input'].includes(e.target.id)) {
+      if (['pos-cust-name', 'pos-cust-phone', 'pos-amount-paid', 'pos-medicine-search', 'form-name', 'form-generic', 'form-batch', 'form-dealer-name', 'form-purchase-invoice', 'form-cost-price', 'form-price', 'form-rack', 'inventory-search', 'customer-search', 'details-search-keyword', 'details-search-invoices', 'attach-modal-barcode-input', 'bill-matching-search'].includes(e.target.id)) {
         return;
       }
 
@@ -2088,7 +2437,7 @@
       }
     });
 
-    // POS LOGIC
+    // POS SCAN INPUT LISTENER
     document.getElementById('pos-barcode-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const val = e.target.value.trim();
@@ -2098,496 +2447,6 @@
         }
       }
     });
-
-    async function addItemToCartByBarcode(barcode) {
-      try {
-        const res = await fetch(`${API_BASE}/medicines/scan/${encodeURIComponent(barcode)}`);
-        if (!res.ok) {
-          const err = await res.json();
-          alert(err.message || 'Item not found');
-          return;
-        }
-        const med = await res.json();
-
-        if (new Date(med.expiryDate) < new Date()) {
-          alert(`BLOCKED: ${med.name} (Batch: ${med.batchNumber}) has expired.`);
-          return;
-        }
-
-        if (med.quantity <= 0) {
-          alert(`${med.name} is out of stock.`);
-          return;
-        }
-
-        const expFormatted = med.expiryDate 
-          ? new Date(med.expiryDate).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) 
-          : 'N/A';
-
-        const existing = cart.find(i => i.medicineId === med._id);
-        if (existing) {
-          if (existing.quantity + 1 > med.quantity) {
-            alert(`Stock limit reached (${med.quantity} available)`);
-            return;
-          }
-          existing.quantity++;
-          existing.total = existing.quantity * existing.unitPrice;
-        } else {
-          cart.push({
-            medicineId: med._id,
-            name: med.name,
-            batchNumber: med.batchNumber,
-            expiryDate: expFormatted,
-            unitPrice: med.price,
-            quantity: 1,
-            maxStock: med.quantity,
-            total: med.price
-          });
-        }
-        renderCart();
-      } catch (err) {
-        alert('Lookup error.');
-      }
-    }
-
-    function updateCartQuantity(id, deltaOrVal) {
-      const item = cart.find(i => i.medicineId === id);
-      if (!item) return;
-
-      let newQty = typeof deltaOrVal === 'string' ? parseInt(deltaOrVal) || 1 : item.quantity + deltaOrVal;
-      if (newQty <= 0) {
-        removeFromCart(id);
-        return;
-      }
-
-      if (newQty > item.maxStock) {
-        alert(`Cannot exceed stock limit (${item.maxStock})`);
-        item.quantity = item.maxStock;
-      } else {
-        item.quantity = newQty;
-      }
-      item.total = item.quantity * item.unitPrice;
-      renderCart();
-    }
-
-    function removeFromCart(id) {
-      cart = cart.filter(i => i.medicineId !== id);
-      renderCart();
-    }
-
-    function calculateDiscountAmount(subtotal) {
-      const discountInput = document.getElementById('pos-discount-value')?.value;
-      const val = discountInput === '' ? 0 : (parseFloat(discountInput) || 0);
-      const type = document.getElementById('pos-discount-type')?.value || 'percent';
-
-      let amount = (type === 'percent') ? (subtotal * val) / 100 : val;
-      return Math.min(Math.max(0, amount), subtotal);
-    }
-
-    function calculateDueBalance() {
-      const grandTotalStr = document.getElementById('pos-grand-total').innerText.replace('₹', '');
-      const grandTotal = parseFloat(grandTotalStr) || 0;
-      const paidInput = document.getElementById('pos-amount-paid').value;
-      const paid = paidInput === '' ? grandTotal : parseFloat(paidInput) || 0;
-      const remaining = Math.max(0, grandTotal - paid);
-      document.getElementById('pos-remaining-due').innerText = `₹${remaining.toFixed(2)}`;
-    }
-
-    function renderCart() {
-      const tbody = document.getElementById('cart-table-body');
-      const mobileList = document.getElementById('cart-mobile-container');
-
-      if (cart.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode or search above to add medicine.</td></tr>';
-        mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">Cart is empty. Scan barcode or search above to add medicine.</div>';
-        document.getElementById('pos-subtotal').innerText = '₹0.00';
-        document.getElementById('pos-discount-display').innerText = '-₹0.00';
-        document.getElementById('pos-tax').innerText = '₹0.00';
-        document.getElementById('pos-prev-due').innerText = '+₹0.00';
-        document.getElementById('pos-grand-total').innerText = '₹0.00';
-        document.getElementById('pos-amount-paid').value = '';
-        document.getElementById('pos-remaining-due').innerText = '₹0.00';
-        document.getElementById('checkout-btn').disabled = true;
-        return;
-      }
-
-      tbody.innerHTML = cart.map(item => `
-        <tr class="hover:bg-slate-50">
-          <td class="p-3 font-semibold text-slate-800">${item.name}</td>
-          <td class="p-3 text-slate-500 font-mono text-xs">${item.batchNumber}</td>
-          <td class="p-3 text-amber-700 font-bold text-xs">${item.expiryDate}</td>
-          <td class="p-3 text-slate-700">₹${item.unitPrice.toFixed(2)}</td>
-          <td class="p-3 text-center">
-            <input type="number" min="1" max="${item.maxStock}" value="${item.quantity}" onchange="updateCartQuantity('${item.medicineId}', this.value)" class="w-16 border border-slate-300 rounded px-2 py-1 text-center font-bold" />
-            <span class="text-xs text-slate-400 block mt-0.5">Avail: ${item.maxStock}</span>
-          </td>
-          <td class="p-3 text-right font-bold text-slate-900">₹${item.total.toFixed(2)}</td>
-          <td class="p-3 text-center">
-            <button onclick="removeFromCart('${item.medicineId}')" class="text-rose-500 hover:text-rose-700 font-bold">&times;</button>
-          </td>
-        </tr>
-      `).join('');
-
-      mobileList.innerHTML = cart.map(item => `
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex justify-between items-center gap-2">
-          <div class="flex-1 min-w-0">
-            <h4 class="font-bold text-xs text-slate-800 truncate">${item.name}</h4>
-            <p class="text-[10px] text-slate-500 font-mono">B: ${item.batchNumber} | Exp: ${item.expiryDate} | ₹${item.unitPrice.toFixed(2)}</p>
-            <p class="text-xs font-bold text-emerald-700 mt-1">₹${item.total.toFixed(2)}</p>
-          </div>
-          <div class="flex items-center gap-1.5 flex-shrink-0">
-            <button onclick="updateCartQuantity('${item.medicineId}', -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded font-bold text-xs active:bg-slate-200">-</button>
-            <span class="text-xs font-bold w-6 text-center">${item.quantity}</span>
-            <button onclick="updateCartQuantity('${item.medicineId}', 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-slate-300 rounded font-bold text-xs active:bg-slate-200">+</button>
-            <button onclick="removeFromCart('${item.medicineId}')" class="text-rose-500 p-1.5 text-base leading-none ml-1 font-bold">&times;</button>
-          </div>
-        </div>
-      `).join('');
-
-      const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-      const discountAmount = calculateDiscountAmount(subtotal);
-      const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-      const tax = Number((discountedSubtotal * 0.05).toFixed(2));
-      const grandTotal = Number((discountedSubtotal + tax + currentCustomerDue).toFixed(2));
-
-      document.getElementById('pos-subtotal').innerText = `₹${subtotal.toFixed(2)}`;
-      document.getElementById('pos-discount-display').innerText = `-₹${discountAmount.toFixed(2)}`;
-      document.getElementById('pos-tax').innerText = `₹${tax.toFixed(2)}`;
-      document.getElementById('pos-prev-due').innerText = `+₹${currentCustomerDue.toFixed(2)}`;
-      document.getElementById('pos-grand-total').innerText = `₹${grandTotal.toFixed(2)}`;
-      
-      calculateDueBalance();
-      document.getElementById('checkout-btn').disabled = false;
-    }
-
-    async function handleCheckout() {
-      if (cart.length === 0) return;
-
-      const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-      const discountAmount = calculateDiscountAmount(subtotal);
-      const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-      const tax = Number((discountedSubtotal * 0.05).toFixed(2));
-      const grandTotal = Number((discountedSubtotal + tax + currentCustomerDue).toFixed(2));
-
-      const paidInput = document.getElementById('pos-amount-paid').value;
-      const amountPaid = paidInput === '' ? grandTotal : Math.max(0, parseFloat(paidInput) || 0);
-      const remainingDue = Math.max(0, Number((grandTotal - amountPaid).toFixed(2)));
-
-      const payload = {
-        customerName: document.getElementById('pos-cust-name').value.trim() || 'Walk-in Customer',
-        customerPhone: document.getElementById('pos-cust-phone').value.trim(),
-        items: cart,
-        subtotal,
-        discount: Number(discountAmount.toFixed(2)),
-        tax,
-        previousDue: currentCustomerDue,
-        grandTotal,
-        amountPaid,
-        remainingDue
-      };
-
-      try {
-        const res = await fetch(`${API_BASE}/billing/checkout`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          alert('Checkout error: ' + (err.error || 'Server rejected checkout'));
-          return;
-        }
-
-        const bill = await res.json();
-        generatePdf(bill);
-
-        cart = [];
-        currentCustomerDue = 0;
-        updateDueAlert();
-        document.getElementById('pos-cust-name').value = '';
-        document.getElementById('pos-cust-phone').value = '';
-        document.getElementById('pos-discount-value').value = '10';
-        document.getElementById('pos-discount-type').value = 'percent';
-        document.getElementById('pos-amount-paid').value = '';
-        renderCart();
-        checkExpiryNotifications();
-        alert(`Sale completed! Invoice ${bill.invoiceNumber} downloaded.`);
-      } catch (err) {
-        alert('Server network error during checkout.');
-      }
-    }
-
-    // PDF INVOICE GENERATOR
-    function generatePdf(billData) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-      const pageWidth = doc.internal.pageSize.getWidth();
-
-      doc.setFillColor(5, 150, 105);
-      doc.rect(0, 0, pageWidth, 8, 'F');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(20);
-      doc.setTextColor(15, 23, 42);
-      doc.text('EVERGREEN PHARMACY', 40, 48);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(100, 116, 139);
-      doc.text('Retail Drug License No: DL-2024-WB-89210 | GSTIN: 19ABCDE1234F1Z5', 40, 62);
-      doc.text('Tagra, Ramnagar, Tarakeswar, PIN-712410 | Ph: +91 98765 43210', 40, 74);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.setTextColor(5, 150, 105);
-      doc.text('TAX INVOICE / CASH MEMO', pageWidth - 40, 48, { align: 'right' });
-
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(1);
-      doc.line(40, 86, pageWidth - 40, 86);
-
-      const boxY = 96;
-      const boxHeight = 52;
-      const colWidth = (pageWidth - 80 - 15) / 2;
-
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(40, boxY, colWidth, boxHeight, 4, 4, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(40, boxY, colWidth, boxHeight, 4, 4, 'S');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text('PATIENT / CUSTOMER DETAILS', 50, boxY + 14);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(15, 23, 42);
-      doc.text(billData.customerName || 'Walk-in Customer', 50, boxY + 28);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(71, 85, 105);
-      doc.text(`Contact: ${billData.customerPhone || 'Not Provided'}`, 50, boxY + 42);
-
-      const rightX = 40 + colWidth + 15;
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(rightX, boxY, colWidth, boxHeight, 4, 4, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(rightX, boxY, colWidth, boxHeight, 4, 4, 'S');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text('INVOICE INFORMATION', rightX + 10, boxY + 14);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(5, 150, 105);
-      doc.text(billData.invoiceNumber, rightX + 10, boxY + 28);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(71, 85, 105);
-      const formattedDate = new Date(billData.createdAt || Date.now()).toLocaleString('en-IN', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      });
-      doc.text(`Date: ${formattedDate}`, rightX + 10, boxY + 42);
-
-      const tableRows = billData.items.map((it, idx) => {
-        let expDisplay = it.expiryDate || 'N/A';
-        if (it.expiryDate && it.expiryDate.includes('-')) {
-          const d = new Date(it.expiryDate);
-          expDisplay = !isNaN(d) ? d.toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) : it.expiryDate;
-        }
-
-        return [
-          idx + 1,
-          it.name,
-          it.batchNumber,
-          expDisplay,
-          it.quantity,
-          `₹${Number(it.unitPrice).toFixed(2)}`,
-          `₹${Number(it.total).toFixed(2)}`
-        ];
-      });
-
-      doc.autoTable({
-        startY: 160,
-        margin: { left: 40, right: 40 },
-        head: [['#', 'Item / Medicine Description', 'Batch', 'Exp Date', 'Qty', 'Unit Price', 'Amount']],
-        body: tableRows,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [15, 23, 42],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          fontSize: 8.5,
-          halign: 'left'
-        },
-        bodyStyles: {
-          fontSize: 8.5,
-          textColor: [30, 41, 59],
-          cellPadding: 6
-        },
-        columnStyles: {
-          0: { cellWidth: 24, halign: 'center' },
-          1: { cellWidth: 'auto' },
-          2: { cellWidth: 65, font: 'courier' },
-          3: { cellWidth: 55, halign: 'center', fontStyle: 'bold', textColor: [180, 83, 9] },
-          4: { cellWidth: 40, halign: 'center' },
-          5: { cellWidth: 60, halign: 'right' },
-          6: { cellWidth: 65, halign: 'right', fontStyle: 'bold' }
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252]
-        }
-      });
-
-      let finalY = doc.lastAutoTable.finalY + 16;
-      const summaryBoxWidth = 220;
-      const summaryBoxX = pageWidth - 40 - summaryBoxWidth;
-
-      doc.setFillColor(248, 250, 252);
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(summaryBoxX, finalY, summaryBoxWidth, 115, 4, 4, 'FD');
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(71, 85, 105);
-
-      let lineY = finalY + 16;
-      doc.text('Subtotal:', summaryBoxX + 10, lineY);
-      doc.text(`₹${Number(billData.subtotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
-
-      if (billData.discount && billData.discount > 0) {
-        lineY += 14;
-        doc.setTextColor(220, 38, 38);
-        doc.text('Discount Applied:', summaryBoxX + 10, lineY);
-        doc.text(`- ₹${Number(billData.discount).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
-      }
-
-      lineY += 14;
-      doc.setTextColor(71, 85, 105);
-      doc.text('Applicable GST (5%):', summaryBoxX + 10, lineY);
-      doc.text(`₹${Number(billData.tax).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
-
-      if (billData.previousDue && billData.previousDue > 0) {
-        lineY += 14;
-        doc.setTextColor(180, 83, 9);
-        doc.text('Previous Outstanding Due:', summaryBoxX + 10, lineY);
-        doc.text(`+ ₹${Number(billData.previousDue).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
-      }
-
-      lineY += 8;
-      doc.setDrawColor(203, 213, 225);
-      doc.line(summaryBoxX + 10, lineY, pageWidth - 50, lineY);
-
-      lineY += 14;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(15, 23, 42);
-      doc.text('Grand Total:', summaryBoxX + 10, lineY);
-      doc.setTextColor(5, 150, 105);
-      doc.text(`₹${Number(billData.grandTotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
-
-      lineY += 14;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(71, 85, 105);
-      doc.text('Amount Received:', summaryBoxX + 10, lineY);
-      doc.text(`₹${Number(billData.amountPaid || billData.grandTotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
-
-      if (billData.remainingDue && billData.remainingDue > 0) {
-        lineY += 14;
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(220, 38, 38);
-        doc.text('Current Balance Due:', summaryBoxX + 10, lineY);
-        doc.text(`₹${Number(billData.remainingDue).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
-      }
-
-      const footerY = Math.max(finalY + 135, 740);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text('TERMS & CONDITIONS:', 40, footerY);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      doc.setTextColor(148, 163, 184);
-      doc.text('1. Please verify batch & expiry details before leaving counter.', 40, footerY + 12);
-      doc.text('2. Refrigerated & Schedule items cannot be returned.', 40, footerY + 22);
-      doc.text('3. Outstanding dues must be cleared on or before next purchase.', 40, footerY + 32);
-
-      const sigX = pageWidth - 160;
-      doc.setDrawColor(203, 213, 225);
-      doc.line(sigX, footerY + 20, pageWidth - 40, footerY + 20);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(71, 85, 105);
-      doc.text('Dispensing Pharmacist', sigX + 15, footerY + 32);
-
-      doc.save(`${billData.invoiceNumber}.pdf`);
-    }
-
-    // INVOICE ARCHIVE API
-    async function fetchBills() {
-      try {
-        const res = await fetch(`${API_BASE}/billing`);
-        const data = await res.json();
-        bills = Array.isArray(data) ? data : [];
-
-        const tbody = document.getElementById('bills-table-body');
-        const mobileList = document.getElementById('bills-mobile-container');
-
-        if (!bills.length) {
-          if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">No invoices recorded yet.</td></tr>';
-          if (mobileList) mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">No invoices recorded yet.</div>';
-          return;
-        }
-
-        if (tbody) {
-          tbody.innerHTML = bills.map(b => `
-            <tr class="hover:bg-slate-50">
-              <td class="p-3 font-mono font-bold text-emerald-700">${b.invoiceNumber}</td>
-              <td class="p-3 text-slate-500 text-xs">${new Date(b.createdAt).toLocaleDateString()}</td>
-              <td class="p-3 text-slate-800">${b.customerName} <span class="text-xs text-slate-400 block font-mono">${b.customerPhone || ''}</span></td>
-              <td class="p-3 text-slate-600 text-xs">${b.items ? b.items.length : 0} product(s)</td>
-              <td class="p-3 text-right font-bold text-slate-900">₹${Number(b.grandTotal).toFixed(2)}</td>
-              <td class="p-3 text-right font-bold ${b.remainingDue > 0 ? 'text-rose-600' : 'text-slate-400'}">
-                ${b.remainingDue > 0 ? '₹' + Number(b.remainingDue).toFixed(2) : 'Cleared'}
-              </td>
-              <td class="p-3 text-center">
-                <button onclick='generatePdf(${JSON.stringify(b)})' class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">Download PDF</button>
-              </td>
-            </tr>
-          `).join('');
-        }
-
-        if (mobileList) {
-          mobileList.innerHTML = bills.map(b => `
-            <div class="bg-white border border-slate-200 rounded-lg p-3 flex justify-between items-center">
-              <div>
-                <p class="font-mono font-bold text-xs text-emerald-700">${b.invoiceNumber}</p>
-                <p class="text-[11px] text-slate-800 font-semibold">${b.customerName} (${b.customerPhone || 'No Phone'})</p>
-                <p class="text-[10px] text-slate-400">${new Date(b.createdAt).toLocaleDateString()} • ${b.items ? b.items.length : 0} item(s)</p>
-                ${b.remainingDue > 0 ? `<span class="text-[10px] font-bold text-rose-600">Pending Due: ₹${b.remainingDue.toFixed(2)}</span>` : ''}
-              </div>
-              <div class="text-right">
-                <p class="font-bold text-xs text-slate-900">₹${Number(b.grandTotal).toFixed(2)}</p>
-                <button onclick='generatePdf(${JSON.stringify(b)})' class="mt-1 text-[11px] font-bold text-emerald-600 active:text-emerald-800">Download PDF</button>
-              </div>
-            </div>
-          `).join('');
-        }
-
-      } catch (err) {
-        console.error('Fetch Bills Error:', err);
-      }
-    }
 
     // CUSTOMER DIRECTORY API
     async function fetchCustomers() {
@@ -2654,8 +2513,9 @@
       }
     }
 
-    // Initial load
+    // INITIAL LOAD
     fetchInventory();
+    loadSavedBillChecklist();
   </script>
 </body>
 </html>
