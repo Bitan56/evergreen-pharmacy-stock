@@ -318,6 +318,7 @@ router.post('/bulk-delete', async (req, res) => {
 });
 
 // GET /api/medicines/alerts/low-stock - Fetch medicines with quantity < threshold (default: 2)
+// GET /api/medicines/alerts/low-stock - Fetch sub-2-unit inventory
 router.get('/alerts/low-stock', async (req, res) => {
   try {
     const threshold = parseInt(req.query.threshold) || 2;
