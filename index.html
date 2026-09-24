@@ -13,8 +13,8 @@
   <style>
     #camera-viewport {
       width: 100% !important;
-      min-height: 280px !important;
-      height: 280px !important;
+      min-height: 240px !important;
+      height: 260px !important;
       position: relative !important;
       background-color: #000 !important;
       display: flex !important;
@@ -32,19 +32,19 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-900 min-h-screen font-sans pb-24 sm:pb-12">
+<body class="bg-slate-100 text-slate-900 min-h-screen font-sans pb-24 sm:pb-12 antialiased">
 
   <!-- Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-14 sm:h-16">
-      <div class="flex items-center space-x-2.5">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex justify-between items-center h-14 sm:h-16">
+      <div class="flex items-center space-x-2">
         <div class="bg-emerald-600 text-white p-1.5 sm:p-2 rounded-lg font-black text-base sm:text-xl leading-none">Rx</div>
         <div>
           <div class="flex items-center gap-1.5">
-            <h1 class="font-bold text-sm sm:text-lg leading-tight">Evergreen Pharmacy</h1>
-            <span id="server-status-dot" title="Checking server status..." class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <h1 class="font-bold text-xs sm:text-lg leading-tight truncate max-w-[150px] sm:max-w-none">Evergreen Pharmacy</h1>
+            <span id="server-status-dot" title="Checking server status..." class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
           </div>
-          <p class="text-[10px] sm:text-xs text-slate-500">Stock Management & POS</p>
+          <p class="text-[9px] sm:text-xs text-slate-500">Stock Management & POS</p>
         </div>
       </div>
 
@@ -58,13 +58,14 @@
             <span id="notif-badge" class="hidden absolute top-1 right-1 bg-rose-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
           </button>
 
-          <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden">
+          <!-- Viewport-Aware Responsive Dropdown -->
+          <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-96 max-w-sm bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden">
             <div class="p-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
               <span class="font-bold text-xs sm:text-sm text-slate-800">Alerts & Notifications</span>
               <span id="notif-summary" class="text-[10px] sm:text-xs text-slate-500">0 alerts</span>
             </div>
 
-            <div class="max-h-96 overflow-y-auto divide-y divide-slate-100 text-xs sm:text-sm">
+            <div class="max-h-80 sm:max-h-96 overflow-y-auto divide-y divide-slate-100 text-xs sm:text-sm">
               <!-- Section 1: Expiry Alerts -->
               <div class="p-2.5 bg-slate-50/50">
                 <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/60 mb-1">
@@ -96,47 +97,47 @@
 
         <!-- Desktop Navigation Tabs -->
         <nav class="hidden sm:flex bg-slate-100 p-1 rounded-lg">
-          <button id="tab-btn-pos" onclick="switchTab('pos')" class="px-3.5 py-1.5 text-xs font-bold rounded-md bg-white text-emerald-700 shadow-sm transition">POS</button>
-          <button id="tab-btn-inventory" onclick="switchTab('inventory')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Stock & Batch</button>
-          <button id="tab-btn-medicines" onclick="switchTab('medicines')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Medicine Lookup</button>
-          <button id="tab-btn-bills" onclick="switchTab('bills')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Invoices</button>
-          <button id="tab-btn-customers" onclick="switchTab('customers')" class="px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Customers & Dues</button>
+          <button id="tab-btn-pos" onclick="switchTab('pos')" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white text-emerald-700 shadow-sm transition">POS</button>
+          <button id="tab-btn-inventory" onclick="switchTab('inventory')" class="px-3 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Stock & Batch</button>
+          <button id="tab-btn-medicines" onclick="switchTab('medicines')" class="px-3 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Medicine Lookup</button>
+          <button id="tab-btn-bills" onclick="switchTab('bills')" class="px-3 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Invoices</button>
+          <button id="tab-btn-customers" onclick="switchTab('customers')" class="px-3 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">Customers & Dues</button>
         </nav>
       </div>
     </div>
   </header>
 
   <!-- Server Warning Banner -->
-  <div id="server-error-banner" class="hidden bg-rose-600 text-white px-4 py-2 text-xs font-bold text-center">
+  <div id="server-error-banner" class="hidden bg-rose-600 text-white px-3 sm:px-4 py-2 text-xs font-bold text-center">
     Cannot connect to server or database. Ensure backend server is running and database connection is available.
     <button onclick="checkServerHealth()" class="underline ml-2">Retry</button>
   </div>
 
-  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3.5 sm:py-8">
 
     <!-- ================= TAB 1: POS BILLING ================= -->
     <section id="view-pos" class="space-y-4 sm:space-y-6">
-      <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
+      <div class="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-sm">
         
         <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Point of Sale</h2>
-            <p class="text-[11px] sm:text-xs text-slate-500">Scan codes or search medicines by name, batch, or pack</p>
+            <p class="text-[10px] sm:text-xs text-slate-500">Scan barcodes or search medicines by name, batch, or pack</p>
           </div>
-          <button onclick="startCameraScanner('pos')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-sm">
+          <button onclick="startCameraScanner('pos')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs font-bold transition shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" /></svg>
             <span>Scan Camera</span>
           </button>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 sm:mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-4 sm:mb-6">
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Scan / Type Barcode (Enter)</label>
             <input 
               type="text" 
               id="pos-barcode-input" 
               placeholder="Scan code + Enter..." 
-              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" 
+              class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" 
             />
           </div>
 
@@ -148,7 +149,7 @@
               oninput="handlePosMedicineSearch(this.value)" 
               placeholder="Type name, batch, or pack..." 
               autocomplete="off" 
-              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" 
+              class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" 
             />
             <div 
               id="pos-medicine-suggestions" 
@@ -163,7 +164,7 @@
               id="pos-cust-phone" 
               oninput="handlePhoneInput(this.value)" 
               placeholder="10-digit mobile number" 
-              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" 
+              class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono" 
             />
             <div id="phone-suggestions" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto"></div>
           </div>
@@ -174,19 +175,19 @@
               type="text" 
               id="pos-cust-name" 
               placeholder="Walk-in Customer" 
-              class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" 
+              class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" 
             />
           </div>
         </div>
 
         <!-- Previous Due Banner -->
-        <div id="pos-due-alert" class="hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs flex justify-between items-center text-amber-900">
+        <div id="pos-due-alert" class="hidden mb-3 sm:mb-4 p-2.5 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs flex justify-between items-center text-amber-900">
           <div>
             <span class="font-bold">Existing Outstanding Balance:</span>
             <span id="pos-due-alert-amount" class="font-bold text-amber-700 ml-1">₹0.00</span>
-            <span class="text-[10px] text-amber-600 ml-2">(Added to Total Payable)</span>
+            <span class="text-[10px] text-amber-600 ml-1 sm:ml-2 block sm:inline">(Added to Total Payable)</span>
           </div>
-          <button onclick="clearCustomerDueSelection()" class="text-amber-700 hover:text-amber-900 font-bold text-xs underline">Remove Due</button>
+          <button onclick="clearCustomerDueSelection()" class="text-amber-700 hover:text-amber-900 font-bold text-xs underline flex-shrink-0">Remove Due</button>
         </div>
 
         <!-- Desktop Cart Table -->
@@ -210,19 +211,19 @@
         </div>
 
         <!-- Mobile Cart Cards -->
-        <div id="cart-mobile-container" class="md:hidden space-y-2.5 mb-6">
-          <div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">
+        <div id="cart-mobile-container" class="md:hidden space-y-2.5 mb-5">
+          <div class="p-5 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">
             Cart is empty. Scan barcode or search above to add medicine.
           </div>
         </div>
 
         <!-- Summary & Payment -->
-        <div class="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-4 pt-4 border-t border-slate-100">
-          <p class="text-[11px] text-slate-400 hidden sm:block max-w-sm">
+        <div class="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-slate-100">
+          <p class="text-[10px] sm:text-[11px] text-slate-400 hidden sm:block max-w-sm">
             * Expired batches are blocked. Completed bills automatically update inventory and customer ledger records.
           </p>
           
-          <div class="w-full md:w-88 space-y-2.5 bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-lg border md:border-0 border-slate-200">
+          <div class="w-full md:w-88 space-y-2 sm:space-y-2.5 bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-lg border md:border-0 border-slate-200">
             <div class="flex justify-between text-xs sm:text-sm text-slate-600">
               <span>Items Subtotal:</span>
               <span id="pos-subtotal" class="font-bold text-slate-800">₹0.00</span>
@@ -230,7 +231,7 @@
 
             <div class="flex items-center justify-between gap-2">
               <span class="text-xs sm:text-sm text-slate-600">Discount:</span>
-              <div class="flex items-center gap-1.5 w-44">
+              <div class="flex items-center gap-1.5 w-40 sm:w-44">
                 <input 
                   type="number" 
                   id="pos-discount-value" 
@@ -267,7 +268,7 @@
               <span id="pos-prev-due">+₹0.00</span>
             </div>
 
-            <div class="flex justify-between text-base sm:text-lg font-black text-slate-900 border-t border-slate-200 pt-1.5">
+            <div class="flex justify-between text-sm sm:text-lg font-black text-slate-900 border-t border-slate-200 pt-1.5">
               <span>Total Payable:</span>
               <span id="pos-grand-total" class="text-emerald-600">₹0.00</span>
             </div>
@@ -290,7 +291,7 @@
               </div>
             </div>
 
-            <button onclick="handleCheckout()" id="checkout-btn" disabled class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:bg-slate-300 disabled:cursor-not-allowed text-white py-3 rounded-lg text-sm font-bold transition shadow-sm">
+            <button onclick="handleCheckout()" id="checkout-btn" disabled class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:bg-slate-300 disabled:cursor-not-allowed text-white py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-bold transition shadow-sm">
               Complete Sale & Print PDF
             </button>
           </div>
@@ -299,11 +300,11 @@
     </section>
 
     <!-- ================= TAB 2: INVENTORY & STOCKING ================= -->
-    <section id="view-inventory" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <section id="view-inventory" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       
       <!-- Restock Form Card -->
-      <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
-        <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+      <div class="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-sm">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-3.5 sm:mb-4">
           <div>
             <h2 id="stock-form-title" class="text-base sm:text-lg font-bold text-slate-800">Add / Restock Batch</h2>
             <p id="stock-form-subtitle" class="text-[10px] text-slate-500">Scan barcodes (optional) or enter details</p>
@@ -312,12 +313,12 @@
             <button 
               type="button" 
               onclick="openBillMatchingModal()" 
-              class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-lg border border-emerald-200 transition flex items-center gap-1"
+              class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg border border-emerald-200 transition flex items-center gap-1"
             >
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-              <span>Match Medicine</span>
+              <span>Match Bill</span>
             </button>
-            <button type="button" onclick="resetStockForm()" id="stock-cancel-edit-btn" class="hidden text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1.5 rounded">
+            <button type="button" onclick="resetStockForm()" id="stock-cancel-edit-btn" class="hidden text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 sm:py-1.5 rounded">
               Reset
             </button>
           </div>
@@ -331,7 +332,7 @@
           <div>
             <div class="flex justify-between items-center mb-1">
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600">
-                Barcodes <span class="text-slate-400 font-normal">(Leave empty for "No Barcode")</span>
+                Barcodes <span class="text-slate-400 font-normal">(Optional)</span>
               </label>
               <span id="barcode-status" class="text-[10px] font-medium text-slate-400"></span>
             </div>
@@ -347,65 +348,65 @@
               <button 
                 type="button" 
                 onclick="addBarcodeFromInput()" 
-                class="px-2.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition"
+                class="px-2.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition flex-shrink-0"
               >
                 Add
               </button>
               <button 
                 type="button" 
                 onclick="startCameraScanner('inventory_multi')" 
-                class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-200"
+                class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-200 flex-shrink-0"
               >
-                Scan (Cam)
+                Cam
               </button>
             </div>
 
-            <div id="barcode-tags-container" class="flex flex-wrap gap-1.5 mt-2 min-h-[38px] p-2 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+            <div id="barcode-tags-container" class="flex flex-wrap gap-1.5 mt-2 min-h-[36px] p-2 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
               <span class="text-[11px] text-amber-700 font-medium self-center">No barcode entered. Item will be flagged as "No Barcode".</span>
             </div>
           </div>
 
           <!-- Product Identification: Name & Pack Of -->
-          <div class="grid grid-cols-3 gap-2.5">
-            <div class="col-span-2">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div class="sm:col-span-2">
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
-              <input type="text" id="form-name" required placeholder="e.g. PAN 40, Paracetamol" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+              <input type="text" id="form-name" required placeholder="e.g. PAN 40, Paracetamol" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
             </div>
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Pack Of (Unit)</label>
-              <input type="text" id="form-pack-of" placeholder="e.g. 10 Tabs, 100ml" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white font-medium text-slate-700" />
+              <input type="text" id="form-pack-of" placeholder="e.g. 10 Tabs, 100ml" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 bg-white font-medium text-slate-700" />
             </div>
           </div>
 
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Generic / Salt Composition</label>
-            <input type="text" id="form-generic" placeholder="e.g. Pantoprazole Gastro-resistant IP" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+            <input type="text" id="form-generic" placeholder="e.g. Pantoprazole Gastro-resistant IP" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Dealer / Supplier Name</label>
-              <input type="text" id="form-dealer-name" placeholder="e.g. Apollo Pharma" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+              <input type="text" id="form-dealer-name" placeholder="e.g. Apollo Pharma" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
             </div>
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Purchase Invoice Number</label>
-              <input type="text" id="form-purchase-invoice" placeholder="e.g. INV-2026-9921" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-mono" />
+              <input type="text" id="form-purchase-invoice" placeholder="e.g. INV-2026-9921" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 font-mono" />
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2.5 sm:gap-3">
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Batch No *</label>
-              <input type="text" id="form-batch" required placeholder="26441882" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-mono" />
+              <input type="text" id="form-batch" required placeholder="26441882" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 font-mono" />
             </div>
             <div>
               <label id="form-qty-label" class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Quantity to Add *</label>
-              <input type="number" id="form-qty" required min="1" value="1" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+              <input type="number" id="form-qty" required min="1" value="1" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
 
           <div class="space-y-1.5">
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-2.5 sm:gap-3">
               <div>
                 <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Cost Price (₹) *</label>
                 <input 
@@ -416,7 +417,7 @@
                   min="0" 
                   oninput="updateProfitMarginDisplay()" 
                   placeholder="10.00" 
-                  class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-semibold" 
+                  class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 font-semibold" 
                 />
               </div>
               <div>
@@ -429,7 +430,7 @@
                   min="0" 
                   oninput="updateProfitMarginDisplay()" 
                   placeholder="15.50" 
-                  class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-700" 
+                  class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-700" 
                 />
               </div>
             </div>
@@ -439,37 +440,37 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Date of Purchase</label>
-              <input type="date" id="form-purchase-date" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+              <input type="date" id="form-purchase-date" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
             <div>
               <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Expiry Date *</label>
-              <input type="date" id="form-expiry" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+              <input type="date" id="form-expiry" required class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
 
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Rack / Shelf Location</label>
-            <input type="text" id="form-rack" placeholder="Rack B, Box 2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500" />
+            <input type="text" id="form-rack" placeholder="Rack B, Box 2" class="w-full border border-slate-300 rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500" />
           </div>
 
-          <button type="submit" id="form-submit-btn" class="w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm">
+          <button type="submit" id="form-submit-btn" class="w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm transition shadow-sm">
             Save / Update Batch Stock
           </button>
         </form>
       </div>
 
       <!-- Current Inventory Stock Table -->
-      <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm flex flex-col justify-between">
+      <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-sm flex flex-col justify-between">
         <div>
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pb-3 border-b border-slate-100 mb-3 sm:mb-4">
             <div>
               <h2 class="text-base sm:text-lg font-bold text-slate-800">Current Stock Batches</h2>
-              <p class="text-[11px] text-slate-500">Select checkboxes below to delete multiple records at once</p>
+              <p class="text-[10px] sm:text-[11px] text-slate-500">Select checkboxes below to delete multiple records at once</p>
             </div>
-            <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search name, salt, batch, or pack..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
+            <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search name, salt, batch..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
           </div>
 
           <div class="hidden sm:block overflow-x-auto">
@@ -507,45 +508,45 @@
       </div>
     </section>
 
-    <!-- FLOATING BATCH ACTIONS BAR -->
-    <div id="batch-actions-bar" class="hidden fixed bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700">
-      <span id="batch-selected-count" class="text-xs font-bold text-slate-300">0 selected</span>
+    <!-- FLOATING BATCH ACTIONS BAR (Responsive positioning above bottom navigation) -->
+    <div id="batch-actions-bar" class="hidden fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl shadow-2xl flex items-center gap-2 sm:gap-3 border border-slate-700 max-w-[92vw]">
+      <span id="batch-selected-count" class="text-[11px] sm:text-xs font-bold text-slate-300 whitespace-nowrap">0 selected</span>
       <div class="h-4 w-px bg-slate-700"></div>
-      <button onclick="clearSelectedInventory()" class="text-xs text-slate-400 hover:text-white underline font-semibold">
+      <button onclick="clearSelectedInventory()" class="text-[11px] sm:text-xs text-slate-400 hover:text-white underline font-semibold whitespace-nowrap">
         Unselect All
       </button>
-      <button onclick="handleBulkDeleteInventory()" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">
+      <button onclick="handleBulkDeleteInventory()" class="inline-flex items-center gap-1 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition shadow-sm whitespace-nowrap">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-        <span>Delete Selected</span>
+        <span>Delete</span>
       </button>
     </div>
 
     <!-- ================= TAB 3: MEDICINE DETAILS DIRECTORY ================= -->
     <section id="view-medicines" class="hidden space-y-4">
-      <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
+      <div class="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-sm">
         
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Medicine Directory & Reports</h2>
-            <p class="text-[11px] sm:text-xs text-slate-500">Filter by dates or invoices, upload JSON stocks, and export reports</p>
+            <p class="text-[10px] sm:text-xs text-slate-500">Filter by dates or invoices, upload JSON stocks, and export reports</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <label class="cursor-pointer inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-2 rounded-lg text-xs font-bold transition border border-slate-200">
+            <label class="cursor-pointer inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition border border-slate-200">
               <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
               <span>Upload JSON Stock</span>
               <input type="file" id="json-upload-input" accept=".json" onchange="handleJsonStockUpload(event)" class="hidden" />
             </label>
 
-            <button onclick="startCameraScanner('details_search')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-sm">
+            <button onclick="startCameraScanner('details_search')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition shadow-sm">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" /></svg>
-              <span>Scan to Search</span>
+              <span>Scan Search</span>
             </button>
           </div>
         </div>
 
         <!-- Filter Controls -->
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3.5 mb-5 space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 sm:p-3.5 mb-4 sm:mb-5 space-y-2.5 sm:space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
             <div>
               <label class="block text-[11px] font-semibold text-slate-600 mb-1">Search Keyword</label>
               <input 
@@ -587,17 +588,19 @@
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
-            <span id="directory-match-count" class="text-xs font-bold text-slate-600">Showing 0 matching medicine(s)</span>
+            <span id="directory-match-count" class="text-[11px] sm:text-xs font-bold text-slate-600">Showing 0 matching medicine(s)</span>
             
-            <div class="flex items-center gap-2">
-              <button onclick="clearDirectoryFilters()" class="text-xs text-slate-500 hover:text-slate-800 underline px-2 py-1">
-                Reset Filters
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <button onclick="clearDirectoryFilters()" class="text-xs text-slate-500 hover:text-slate-800 underline px-1.5 py-1">
+                Reset
               </button>
-              <button onclick="downloadFilteredJson()" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
+              <button onclick="downloadFilteredJson()" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] sm:text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm">
                 Download JSON
               </button>
-              <button onclick="downloadFilteredPdf()" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                Download Tabular PDF
+              <!-- Portrait Tabular PDF Button -->
+              <button onclick="downloadFilteredPdf()" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] sm:text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                <span>Download Tabular PDF</span>
               </button>
             </div>
           </div>
@@ -633,9 +636,9 @@
     </section>
 
     <!-- ================= TAB 4: INVOICES ================= -->
-    <section id="view-bills" class="hidden bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
+    <section id="view-bills" class="hidden bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-sm">
       <h2 class="text-base sm:text-lg font-bold text-slate-800 mb-1">Invoice Archive</h2>
-      <p class="text-[11px] sm:text-xs text-slate-500 mb-4">Past customer invoices recorded in database</p>
+      <p class="text-[10px] sm:text-xs text-slate-500 mb-3 sm:mb-4">Past customer invoices recorded in database</p>
 
       <div class="hidden sm:block overflow-x-auto">
         <table class="w-full text-left text-sm">
@@ -662,11 +665,11 @@
     </section>
 
     <!-- ================= TAB 5: CUSTOMERS & DUES ================= -->
-    <section id="view-customers" class="hidden bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
+    <section id="view-customers" class="hidden bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pb-3 border-b border-slate-100 mb-3 sm:mb-4">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-slate-800">Customer Directory & Dues</h2>
-          <p class="text-[11px] text-slate-500">Track customers and settle outstanding balances</p>
+          <p class="text-[10px] sm:text-xs text-slate-500">Track customers and settle outstanding balances</p>
         </div>
         <input type="text" id="customer-search" oninput="renderCustomers()" placeholder="Search name or mobile..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
       </div>
@@ -691,7 +694,7 @@
   </main>
 
   <!-- Mobile Bottom Tab Navigation -->
-  <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around items-center z-40 shadow-lg">
+  <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1.5 flex justify-around items-center z-30 shadow-lg">
     <button id="mobile-nav-pos" onclick="switchTab('pos')" class="flex flex-col items-center text-emerald-600 font-bold text-[10px]">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
       POS
@@ -730,24 +733,24 @@
     </div>
   </div>
 
-  <!-- BILL MEDICINE MATCHING MODAL -->
-  <div id="bill-matching-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-3 sm:p-5 hidden">
-    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
+  <!-- BILL MEDICINE MATCHING MODAL (Responsive Max Width & Viewport Handling) -->
+  <div id="bill-matching-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-2.5 sm:p-5 hidden">
+    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl relative overflow-hidden">
       
       <!-- Modal Header -->
-      <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+      <div class="p-3.5 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50">
         <div>
           <div class="flex items-center gap-2">
-            <h3 class="font-bold text-base sm:text-lg text-slate-800">Bill Medicine Verification & Matching</h3>
+            <h3 class="font-bold text-sm sm:text-lg text-slate-800">Bill Verification & Matching</h3>
             <span id="bill-progress-badge" class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">No bill active</span>
           </div>
-          <p class="text-xs text-slate-500">Upload purchase bill JSON, filter with search, check off items, and log shortages</p>
+          <p class="text-[10px] sm:text-xs text-slate-500">Upload purchase bill JSON, filter with search, check off items, and log shortages</p>
         </div>
 
-        <div class="flex items-center gap-2">
-          <label class="cursor-pointer inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <label class="cursor-pointer inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-            <span>Upload Bill JSON</span>
+            <span>Upload Bill</span>
             <input type="file" id="bill-json-input" accept=".json" onchange="handleBillJsonUpload(event)" class="hidden" />
           </label>
 
@@ -765,13 +768,13 @@
       </div>
 
       <!-- Search & Meta Bar -->
-      <div class="p-3 sm:p-4 border-b border-slate-100 bg-white space-y-2">
-        <div id="bill-meta-bar" class="hidden text-xs flex flex-wrap justify-between items-center gap-2 text-slate-600 pb-1">
+      <div class="p-2.5 sm:p-4 border-b border-slate-100 bg-white space-y-2">
+        <div id="bill-meta-bar" class="hidden text-xs flex flex-wrap justify-between items-center gap-1.5 text-slate-600 pb-1">
           <div>
             <span class="font-bold text-slate-800" id="bill-meta-invoice">Invoice: -</span> • 
             <span id="bill-meta-dealer">Dealer: -</span>
           </div>
-          <span class="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+          <span class="text-[10px] sm:text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Synced to Database & Storage
           </span>
         </div>
@@ -781,30 +784,30 @@
             type="text" 
             id="bill-matching-search" 
             oninput="renderBillChecklist()" 
-            placeholder="Search medicine by brand name, salt composition, or batch in this bill..." 
-            class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" 
+            placeholder="Search medicine by brand name, salt, or batch..." 
+            class="w-full border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" 
           />
-          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2 sm:top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         </div>
       </div>
 
       <!-- Table Body -->
       <div class="flex-1 overflow-y-auto p-2 sm:p-4">
         <table class="w-full text-left text-xs sm:text-sm">
-          <thead class="bg-slate-50 text-slate-600 text-[11px] font-bold uppercase border-b border-slate-200 sticky top-0 z-10">
+          <thead class="bg-slate-50 text-slate-600 text-[10px] sm:text-[11px] font-bold uppercase border-b border-slate-200 sticky top-0 z-10">
             <tr>
-              <th class="p-2.5 text-center w-12">Match</th>
-              <th class="p-2.5">Medicine & Salt</th>
-              <th class="p-2.5">Batch</th>
-              <th class="p-2.5 text-center">Billed Qty</th>
-              <th class="p-2.5 text-center w-28">Received Qty</th>
-              <th class="p-2.5">Discrepancy / Shortage Notes</th>
+              <th class="p-2 sm:p-2.5 text-center w-10 sm:w-12">Match</th>
+              <th class="p-2 sm:p-2.5">Medicine & Salt</th>
+              <th class="p-2 sm:p-2.5">Batch</th>
+              <th class="p-2 sm:p-2.5 text-center">Billed</th>
+              <th class="p-2 sm:p-2.5 text-center w-24 sm:w-28">Received</th>
+              <th class="p-2 sm:p-2.5">Discrepancy Notes</th>
             </tr>
           </thead>
           <tbody id="bill-checklist-body" class="divide-y divide-slate-100">
             <tr>
               <td colspan="6" class="p-8 text-center text-slate-400 text-xs">
-                No invoice uploaded. Click <b>Upload Bill JSON</b> above to load and verify line items.
+                No invoice uploaded. Click <b>Upload Bill</b> above to load and verify line items.
               </td>
             </tr>
           </tbody>
@@ -813,9 +816,9 @@
 
       <!-- Modal Footer -->
       <div class="p-3 sm:p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
-        <span id="bill-search-count" class="text-xs text-slate-500">0 items displayed</span>
-        <button onclick="closeBillMatchingModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs transition">
-          Done / Close
+        <span id="bill-search-count" class="text-[11px] sm:text-xs text-slate-500">0 items displayed</span>
+        <button onclick="closeBillMatchingModal()" class="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs transition">
+          Done
         </button>
       </div>
 
@@ -824,11 +827,11 @@
 
   <!-- ATTACH BARCODE MODAL -->
   <div id="attach-barcode-modal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-    <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl relative space-y-4">
+    <div class="bg-white rounded-xl max-w-sm w-full p-4 sm:p-5 shadow-2xl relative space-y-3 sm:space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-2">
         <div>
           <h3 class="font-bold text-sm text-slate-800">Attach Barcode</h3>
-          <p id="attach-modal-med-title" class="text-xs text-slate-500 truncate"></p>
+          <p id="attach-modal-med-title" class="text-xs text-slate-500 truncate max-w-[240px]"></p>
         </div>
         <button onclick="closeAttachBarcodeModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold leading-none">&times;</button>
       </div>
@@ -848,7 +851,7 @@
             <button 
               type="button" 
               onclick="startCameraScanner('attach_modal')" 
-              class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border"
+              class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border flex-shrink-0"
             >
               Cam
             </button>
@@ -868,67 +871,67 @@
 
   <!-- DETAILED MEDICINE INFO MODAL -->
   <div id="medicine-details-modal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-    <div class="bg-white rounded-xl max-w-md w-full p-5 shadow-2xl relative space-y-4">
-      <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+    <div class="bg-white rounded-xl max-w-md w-full p-4 sm:p-5 shadow-2xl relative space-y-3 sm:space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-start border-b border-slate-100 pb-2.5">
         <div>
-          <h3 id="modal-med-name" class="font-bold text-base text-slate-800"></h3>
-          <p id="modal-med-generic" class="text-xs text-slate-500"></p>
+          <h3 id="modal-med-name" class="font-bold text-sm sm:text-base text-slate-800"></h3>
+          <p id="modal-med-generic" class="text-[11px] sm:text-xs text-slate-500"></p>
         </div>
         <button onclick="closeMedicineDetailsModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold leading-none">&times;</button>
       </div>
 
-      <div class="grid grid-cols-2 gap-3 text-xs">
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Pack Of</span>
-          <span id="modal-med-pack" class="font-bold text-slate-800"></span>
+      <div class="grid grid-cols-2 gap-2 sm:gap-2.5 text-xs">
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Pack Of</span>
+          <span id="modal-med-pack" class="font-bold text-slate-800 truncate block"></span>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Batch Number</span>
-          <span id="modal-med-batch" class="font-mono font-bold text-slate-800"></span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Batch Number</span>
+          <span id="modal-med-batch" class="font-mono font-bold text-slate-800 truncate block"></span>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Barcode Status</span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Barcode Status</span>
           <span id="modal-med-barcode"></span>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Purchase Invoice No</span>
-          <span id="modal-med-invoice" class="font-mono font-bold text-blue-700"></span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Purchase Invoice</span>
+          <span id="modal-med-invoice" class="font-mono font-bold text-blue-700 truncate block"></span>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Dealer / Supplier</span>
-          <span id="modal-med-dealer" class="font-bold text-slate-800"></span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Dealer / Supplier</span>
+          <span id="modal-med-dealer" class="font-bold text-slate-800 truncate block"></span>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Stock Quantity</span>
-          <span id="modal-med-qty" class="font-bold text-slate-800"></span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Stock Quantity</span>
+          <span id="modal-med-qty" class="font-bold text-slate-800 truncate block"></span>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Rack Location</span>
-          <span id="modal-med-rack" class="font-bold text-slate-800"></span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Rack Location</span>
+          <span id="modal-med-rack" class="font-bold text-slate-800 truncate block"></span>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Purchase Cost</span>
-          <span id="modal-med-cost" class="font-semibold text-slate-700"></span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Purchase Cost</span>
+          <span id="modal-med-cost" class="font-semibold text-slate-700 truncate block"></span>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Selling Price</span>
-          <span id="modal-med-price" class="font-bold text-emerald-700"></span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Selling Price</span>
+          <span id="modal-med-price" class="font-bold text-emerald-700 truncate block"></span>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Expiry Date</span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Expiry Date</span>
           <div id="modal-med-expiry"></div>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg col-span-2">
-          <span class="text-slate-400 block text-[10px] uppercase font-bold">Date of Purchase</span>
-          <span id="modal-med-purchased" class="font-medium text-slate-700"></span>
+        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg col-span-2">
+          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Date of Purchase</span>
+          <span id="modal-med-purchased" class="font-medium text-slate-700 truncate block"></span>
         </div>
       </div>
 
-      <div class="flex gap-2 pt-2">
-        <button id="modal-edit-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition">
+      <div class="flex gap-2 pt-1 sm:pt-2">
+        <button id="modal-edit-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 sm:py-2.5 rounded-lg text-xs transition">
           Edit / Restock
         </button>
-        <button onclick="closeMedicineDetailsModal()" class="px-4 py-2.5 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition">
+        <button onclick="closeMedicineDetailsModal()" class="px-4 py-2 sm:py-2.5 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition">
           Close
         </button>
       </div>
@@ -937,20 +940,20 @@
 
   <script>
     // ==========================================
-    // 0. GLOBAL EXPIRY HELPER & STATE
+    // 0. GLOBAL EXPIRY HELPER & CONFIG
     // ==========================================
     window.getExpiryBadge = function(dateStr) {
       if (!dateStr) return '<span class="text-slate-400 text-xs">No Expiry</span>';
       
       const diffDays = Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
       if (diffDays < 0) {
-        return `<span class="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Expired (${Math.abs(diffDays)}d ago)</span>`;
+        return `<span class="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold whitespace-nowrap">Expired (${Math.abs(diffDays)}d ago)</span>`;
       } else if (diffDays <= 30) {
-        return `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Critical (${diffDays}d)</span>`;
+        return `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold whitespace-nowrap">Critical (${diffDays}d)</span>`;
       } else if (diffDays <= 90) {
-        return `<span class="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Expiring (${diffDays}d)</span>`;
+        return `<span class="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold whitespace-nowrap">Expiring (${diffDays}d)</span>`;
       }
-      return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold">Good</span>`;
+      return `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold whitespace-nowrap">Good</span>`;
     };
 
     const API_BASE = '/api';
@@ -998,7 +1001,7 @@
         if (res.ok) {
           const data = await res.json();
           if (data.database === 'connected') {
-            dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+            dot.className = 'w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0';
             dot.title = 'Server & Database Connected';
             banner.classList.add('hidden');
             return true;
@@ -1006,7 +1009,7 @@
         }
         throw new Error('Database disconnected');
       } catch (err) {
-        dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        dot.className = 'w-2 h-2 rounded-full bg-rose-500 flex-shrink-0';
         dot.title = 'Server or Database Disconnected';
         banner.classList.remove('hidden');
         return false;
@@ -1542,7 +1545,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="6" class="p-8 text-center text-slate-400 text-xs">
-              No invoice uploaded. Click <b>Upload Bill JSON</b> above to load and verify line items.
+              No invoice uploaded. Click <b>Upload Bill</b> above to load and verify line items.
             </td>
           </tr>
         `;
@@ -1600,7 +1603,7 @@
 
         return `
           <tr class="${rowBg} transition">
-            <td class="p-2.5 text-center">
+            <td class="p-2 sm:p-2.5 text-center">
               <input 
                 type="checkbox" 
                 ${item.matched ? 'checked' : ''} 
@@ -1608,16 +1611,16 @@
                 class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
               />
             </td>
-            <td class="p-2.5">
+            <td class="p-2 sm:p-2.5">
               <div class="font-bold text-slate-800 flex items-center flex-wrap">
                 <span>${item.name}</span>
                 ${item.packOf ? `<span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-1.5 py-0.5 rounded ml-1.5 border border-slate-200">${item.packOf}</span>` : ''}
               </div>
               <span class="text-[10px] text-slate-400 font-mono">${item.genericName || 'No salt recorded'}</span>
             </td>
-            <td class="p-2.5 font-mono text-slate-700">${item.batchNumber || '-'}</td>
-            <td class="p-2.5 text-center font-bold text-slate-800">${item.billedQty}</td>
-            <td class="p-2.5 text-center">
+            <td class="p-2 sm:p-2.5 font-mono text-slate-700">${item.batchNumber || '-'}</td>
+            <td class="p-2 sm:p-2.5 text-center font-bold text-slate-800">${item.billedQty}</td>
+            <td class="p-2 sm:p-2.5 text-center">
               <input 
                 type="number" 
                 min="0" 
@@ -1627,12 +1630,12 @@
                 class="w-16 border border-slate-300 rounded px-1.5 py-0.5 text-center font-bold text-xs bg-white focus:ring-1 focus:ring-emerald-500" 
               />
             </td>
-            <td class="p-2.5">
+            <td class="p-2 sm:p-2.5">
               <input 
                 type="text" 
                 value="${item.notes || ''}" 
                 onchange="updateBillItemNotes(${originalIndex}, this.value)" 
-                placeholder="${item.receivedQty < item.billedQty ? 'Note reason for shortage...' : 'Optional notes...'}" 
+                placeholder="${item.receivedQty < item.billedQty ? 'Note shortage reason...' : 'Optional notes...'}" 
                 class="w-full border ${item.receivedQty < item.billedQty ? 'border-amber-300 bg-amber-50/40 text-amber-900' : 'border-slate-200 bg-white'} rounded px-2 py-1 text-xs focus:ring-1 focus:ring-emerald-500" 
               />
             </td>
@@ -1694,7 +1697,7 @@
     }
 
     // ==========================================
-    // 7. TABS NAVIGATION & GENERAL HANDLERS
+    // 8. TABS NAVIGATION & GENERAL HANDLERS
     // ==========================================
     function switchTab(tab) {
       document.getElementById('view-pos').classList.toggle('hidden', tab !== 'pos');
@@ -1707,8 +1710,8 @@
         const btn = document.getElementById(`tab-btn-${t}`);
         if (btn) {
           btn.className = (t === tab)
-            ? 'px-3.5 py-1.5 text-xs font-bold rounded-md bg-white text-emerald-700 shadow-sm transition'
-            : 'px-3.5 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
+            ? 'px-3 py-1.5 text-xs font-bold rounded-md bg-white text-emerald-700 shadow-sm transition'
+            : 'px-3 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
         }
 
         const mBtn = document.getElementById(`mobile-nav-${t}`);
@@ -1800,7 +1803,7 @@
       document.getElementById('stock-form-subtitle').innerText = 'Scan barcodes (optional) or enter details';
       document.getElementById('form-qty-label').innerText = 'Quantity to Add *';
       document.getElementById('form-submit-btn').innerText = 'Save / Update Batch Stock';
-      document.getElementById('form-submit-btn').className = 'w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm';
+      document.getElementById('form-submit-btn').className = 'w-full bg-slate-900 active:bg-slate-800 text-white font-bold py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm transition shadow-sm';
       document.getElementById('stock-cancel-edit-btn').classList.add('hidden');
       document.getElementById('profit-margin-container').classList.add('hidden');
 
@@ -1818,7 +1821,7 @@
       document.getElementById('stock-form-subtitle').innerText = `Editing Batch [${med.batchNumber}]`;
       document.getElementById('form-qty-label').innerText = 'Current Total Stock (Overwrite)';
       document.getElementById('form-submit-btn').innerText = 'Save Changes';
-      document.getElementById('form-submit-btn').className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm';
+      document.getElementById('form-submit-btn').className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm transition shadow-sm';
       document.getElementById('stock-cancel-edit-btn').classList.remove('hidden');
 
       document.getElementById('form-name').value = med.name || '';
@@ -1860,7 +1863,7 @@
       document.getElementById('form-qty-label').innerText = 'Additional Quantity to Add *';
       document.getElementById('form-qty').value = '10';
       document.getElementById('form-submit-btn').innerText = `Add Fresh Stock to Batch (${med.batchNumber})`;
-      document.getElementById('form-submit-btn').className = 'w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-sm transition shadow-sm';
+      document.getElementById('form-submit-btn').className = 'w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm transition shadow-sm';
       document.getElementById('stock-cancel-edit-btn').classList.remove('hidden');
 
       document.getElementById('form-name').value = med.name || '';
@@ -1932,6 +1935,9 @@
       }
     }
 
+    // ==========================================
+    // 9. MEDICINE DIRECTORY & FILTERING
+    // ==========================================
     function getFilteredMedicines() {
       const keyword = (document.getElementById('details-search-keyword')?.value || '').trim().toLowerCase();
       const startDate = document.getElementById('details-search-start-date')?.value || '';
@@ -2089,6 +2095,9 @@
       downloadAnchor.remove();
     }
 
+    // ==========================================
+    // 10. PORTRAIT A4 TABULAR PDF GENERATION
+    // ==========================================
     function downloadFilteredPdf() {
       const items = getFilteredMedicines();
       if (!items.length) {
@@ -2097,21 +2106,24 @@
       }
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      // Portrait A4 Dimensions: width 595.28 pt, height 841.89 pt
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
       const pageWidth = doc.internal.pageSize.getWidth();
 
+      // Top Header Accent Bar
       doc.setFillColor(5, 150, 105);
-      doc.rect(0, 0, pageWidth, 6, 'F');
+      doc.rect(0, 0, pageWidth, 5, 'F');
 
+      // Title & Pharmacy Details
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
+      doc.setFontSize(13);
       doc.setTextColor(15, 23, 42);
-      doc.text('EVERGREEN PHARMACY - MEDICINE STOCK REPORT', 40, 36);
+      doc.text('EVERGREEN PHARMACY - STOCK REPORT', 24, 30);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(7.5);
       doc.setTextColor(100, 116, 139);
-      doc.text('Tagra, Ramnagar, Tarakeswar, PIN-712410 | Generated on: ' + new Date().toLocaleString('en-IN'), 40, 48);
+      doc.text('Tagra, Ramnagar, Tarakeswar, PIN-712410 | Generated: ' + new Date().toLocaleString('en-IN'), 24, 42);
 
       const tableRows = items.map((it, idx) => {
         const purDate = it.purchaseDate ? it.purchaseDate.split('T')[0] : (it.createdAt ? it.createdAt.split('T')[0] : '-');
@@ -2136,38 +2148,40 @@
         ];
       });
 
+      // Portrait A4 autoTable layout (Printable width: 595.28 - 36 = 559.28 pt)
       doc.autoTable({
-        startY: 60,
-        margin: { left: 30, right: 30 },
-        head: [['#', 'Medicine & Pack', 'Salt Composition', 'Batch', 'Barcode', 'Invoice #', 'Dealer', 'Qty', 'Cost', 'Sell', 'Pur Date', 'Exp Date', 'Rack']],
+        startY: 52,
+        margin: { left: 18, right: 18 },
+        head: [['#', 'Medicine & Pack', 'Salt Composition', 'Batch', 'Barcode', 'Invoice #', 'Dealer', 'Qty', 'Cost', 'Sell', 'Purchase', 'Expiry', 'Rack']],
         body: tableRows,
         theme: 'grid',
         headStyles: {
           fillColor: [15, 23, 42],
           textColor: [255, 255, 255],
           fontStyle: 'bold',
-          fontSize: 7.5,
-          halign: 'left'
+          fontSize: 6.5,
+          halign: 'left',
+          cellPadding: 3
         },
         bodyStyles: {
-          fontSize: 7.5,
+          fontSize: 6.5,
           textColor: [30, 41, 59],
-          cellPadding: 4
+          cellPadding: 2.5
         },
         columnStyles: {
-          0: { cellWidth: 20, halign: 'center' },
-          1: { cellWidth: 85 },
+          0: { cellWidth: 16, halign: 'center' },
+          1: { cellWidth: 78, fontStyle: 'bold' },
           2: { cellWidth: 70 },
-          3: { cellWidth: 50, font: 'courier' },
-          4: { cellWidth: 70, font: 'courier' },
-          5: { cellWidth: 55 },
-          6: { cellWidth: 65 },
-          7: { cellWidth: 30, halign: 'center', fontStyle: 'bold' },
-          8: { cellWidth: 45, halign: 'right' },
-          9: { cellWidth: 45, halign: 'right', fontStyle: 'bold' },
-          10: { cellWidth: 50 },
-          11: { cellWidth: 50 },
-          12: { cellWidth: 55 }
+          3: { cellWidth: 42, font: 'courier' },
+          4: { cellWidth: 54, font: 'courier' },
+          5: { cellWidth: 44 },
+          6: { cellWidth: 52 },
+          7: { cellWidth: 24, halign: 'center', fontStyle: 'bold' },
+          8: { cellWidth: 38, halign: 'right' },
+          9: { cellWidth: 38, halign: 'right', fontStyle: 'bold' },
+          10: { cellWidth: 36, halign: 'center' },
+          11: { cellWidth: 36, halign: 'center' },
+          12: { cellWidth: 35 }
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252]
@@ -2242,7 +2256,7 @@
         hasBarcode: itemHasBarcode,
         name: document.getElementById('form-name').value.trim(),
         genericName: document.getElementById('form-generic').value.trim(),
-        packOf: document.getElementById('form-pack-of').value.trim(), // <--- sent to backend
+        packOf: document.getElementById('form-pack-of').value.trim(),
         batchNumber: document.getElementById('form-batch').value.trim(),
         dealerName: document.getElementById('form-dealer-name').value.trim(),
         purchaseInvoiceNumber: document.getElementById('form-purchase-invoice').value.trim(),
@@ -2299,7 +2313,7 @@
 
       const safeInventory = Array.isArray(inventory) ? inventory : [];
       const matches = safeInventory.filter(item => 
-        (item.name && item.name.toLowerCase().includes(q)) ||
+        (item.name && item.name.toLowerCase().includes(q)) || 
         (item.genericName && item.genericName.toLowerCase().includes(q)) ||
         (item.packOf && item.packOf.toLowerCase().includes(q)) ||
         (item.batchNumber && item.batchNumber.toLowerCase().includes(q))
@@ -2395,6 +2409,9 @@
       }
     });
 
+    // ==========================================
+    // 11. SCANNER ENGINE
+    // ==========================================
     async function startCameraScanner(target) {
       activeScanTarget = target;
       const modal = document.getElementById('scanner-modal');
@@ -2690,30 +2707,7 @@
       renderCart();
     }
 
-    function stopCameraScanner() {
-      if (qrEngine) {
-        try {
-          if (qrEngine.isScanning) qrEngine.stop();
-          qrEngine.clear();
-        } catch (err) {}
-        qrEngine = null;
-      }
-
-      const viewport = document.getElementById('camera-viewport');
-      if (viewport) {
-        const videos = viewport.querySelectorAll('video');
-        videos.forEach(v => {
-          if (v.srcObject) {
-            v.srcObject.getTracks().forEach(track => track.stop());
-            v.srcObject = null;
-          }
-        });
-        viewport.innerHTML = '';
-      }
-
-      document.getElementById('scanner-modal').classList.add('hidden');
-    }
-
+    // Hardware Scanner Listener
     let barcodeBuffer = '';
     let lastKeyTime = Date.now();
 
@@ -2863,7 +2857,7 @@
 
       if (cart.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Cart is empty. Scan barcode or search above to add medicine.</td></tr>';
-        mobileList.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">Cart is empty. Scan barcode or search above to add medicine.</div>';
+        mobileList.innerHTML = '<div class="p-5 text-center text-slate-400 text-xs border border-dashed rounded-lg bg-slate-50">Cart is empty. Scan barcode or search above to add medicine.</div>';
         document.getElementById('pos-subtotal').innerText = '₹0.00';
         document.getElementById('pos-discount-display').innerText = '-₹0.00';
         document.getElementById('pos-tax').innerText = '₹0.00';
@@ -2899,7 +2893,7 @@
       }).join('');
 
       mobileList.innerHTML = cart.map(item => `
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex justify-between items-center gap-2">
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-2.5 sm:p-3 flex justify-between items-center gap-2">
           <div class="flex-1 min-w-0">
             <h4 class="font-bold text-xs text-slate-800 truncate">
               ${item.name} ${item.packOf ? '(' + item.packOf + ')' : ''}
@@ -2999,50 +2993,50 @@
       doc.rect(0, 0, pageWidth, 8, 'F');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(20);
+      doc.setFontSize(18);
       doc.setTextColor(15, 23, 42);
-      doc.text('EVERGREEN PHARMACY', 40, 48);
+      doc.text('EVERGREEN PHARMACY', 35, 45);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
-      doc.text('Retail Drug License No: DL-2024-WB-89210 | GSTIN: 19ABCDE1234F1Z5', 40, 62);
-      doc.text('Tagra, Ramnagar, Tarakeswar, PIN-712410 | Ph: +91 98765 43210', 40, 74);
+      doc.text('Retail Drug License: DL-2024-WB-89210 | GSTIN: 19ABCDE1234F1Z5', 35, 58);
+      doc.text('Tagra, Ramnagar, Tarakeswar, PIN-712410 | Ph: +91 98765 43210', 35, 70);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
+      doc.setFontSize(12);
       doc.setTextColor(5, 150, 105);
-      doc.text('TAX INVOICE / CASH MEMO', pageWidth - 40, 48, { align: 'right' });
+      doc.text('TAX INVOICE / CASH MEMO', pageWidth - 35, 45, { align: 'right' });
 
       doc.setDrawColor(226, 232, 240);
       doc.setLineWidth(1);
-      doc.line(40, 86, pageWidth - 40, 86);
+      doc.line(35, 82, pageWidth - 35, 82);
 
-      const boxY = 96;
-      const boxHeight = 52;
-      const colWidth = (pageWidth - 80 - 15) / 2;
+      const boxY = 90;
+      const boxHeight = 50;
+      const colWidth = (pageWidth - 70 - 15) / 2;
 
       doc.setFillColor(248, 250, 252);
-      doc.roundedRect(40, boxY, colWidth, boxHeight, 4, 4, 'F');
+      doc.roundedRect(35, boxY, colWidth, boxHeight, 4, 4, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(40, boxY, colWidth, boxHeight, 4, 4, 'S');
+      doc.roundedRect(35, boxY, colWidth, boxHeight, 4, 4, 'S');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
-      doc.text('PATIENT / CUSTOMER DETAILS', 50, boxY + 14);
+      doc.text('PATIENT / CUSTOMER DETAILS', 45, boxY + 14);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
+      doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
-      doc.text(billData.customerName || 'Walk-in Customer', 50, boxY + 28);
+      doc.text(billData.customerName || 'Walk-in Customer', 45, boxY + 28);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
-      doc.text(`Contact: ${billData.customerPhone || 'Not Provided'}`, 50, boxY + 42);
+      doc.text(`Contact: ${billData.customerPhone || 'Not Provided'}`, 45, boxY + 41);
 
-      const rightX = 40 + colWidth + 15;
+      const rightX = 35 + colWidth + 15;
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(rightX, boxY, colWidth, boxHeight, 4, 4, 'F');
       doc.setDrawColor(226, 232, 240);
@@ -3054,18 +3048,18 @@
       doc.text('INVOICE INFORMATION', rightX + 10, boxY + 14);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
+      doc.setFontSize(9.5);
       doc.setTextColor(5, 150, 105);
       doc.text(billData.invoiceNumber, rightX + 10, boxY + 28);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
       const formattedDate = new Date(billData.createdAt || Date.now()).toLocaleString('en-IN', {
         dateStyle: 'medium',
         timeStyle: 'short'
       });
-      doc.text(`Date: ${formattedDate}`, rightX + 10, boxY + 42);
+      doc.text(`Date: ${formattedDate}`, rightX + 10, boxY + 41);
 
       const tableRows = billData.items.map((it, idx) => {
         let expDisplay = it.expiryDate || 'N/A';
@@ -3088,8 +3082,8 @@
       });
 
       doc.autoTable({
-        startY: 160,
-        margin: { left: 40, right: 40 },
+        startY: 152,
+        margin: { left: 35, right: 35 },
         head: [['#', 'Item / Medicine Description', 'Batch', 'Exp Date', 'Qty', 'Unit Price', 'Amount']],
         body: tableRows,
         theme: 'grid',
@@ -3097,13 +3091,13 @@
           fillColor: [15, 23, 42],
           textColor: [255, 255, 255],
           fontStyle: 'bold',
-          fontSize: 8.5,
+          fontSize: 8,
           halign: 'left'
         },
         bodyStyles: {
-          fontSize: 8.5,
+          fontSize: 8,
           textColor: [30, 41, 59],
-          cellPadding: 6
+          cellPadding: 5
         },
         columnStyles: {
           0: { cellWidth: 24, halign: 'center' },
@@ -3119,89 +3113,90 @@
         }
       });
 
-      let finalY = doc.lastAutoTable.finalY + 16;
-      const summaryBoxWidth = 220;
-      const summaryBoxX = pageWidth - 40 - summaryBoxWidth;
+      let finalY = doc.lastAutoTable.finalY + 14;
+      const summaryBoxWidth = 210;
+      const summaryBoxX = pageWidth - 35 - summaryBoxWidth;
 
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(summaryBoxX, finalY, summaryBoxWidth, 115, 4, 4, 'FD');
+      doc.roundedRect(summaryBoxX, finalY, summaryBoxWidth, 110, 4, 4, 'FD');
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
 
-      let lineY = finalY + 16;
+      let lineY = finalY + 15;
       doc.text('Subtotal:', summaryBoxX + 10, lineY);
-      doc.text(`₹${Number(billData.subtotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+      doc.text(`₹${Number(billData.subtotal).toFixed(2)}`, pageWidth - 45, lineY, { align: 'right' });
 
       if (billData.discount && billData.discount > 0) {
-        lineY += 14;
+        lineY += 13;
         doc.setTextColor(220, 38, 38);
         doc.text('Discount Applied:', summaryBoxX + 10, lineY);
-        doc.text(`- ₹${Number(billData.discount).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+        doc.text(`- ₹${Number(billData.discount).toFixed(2)}`, pageWidth - 45, lineY, { align: 'right' });
       }
 
-      lineY += 14;
+      lineY += 13;
       doc.setTextColor(71, 85, 105);
       doc.text('Applicable GST (5%):', summaryBoxX + 10, lineY);
-      doc.text(`₹${Number(billData.tax).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+      doc.text(`₹${Number(billData.tax).toFixed(2)}`, pageWidth - 45, lineY, { align: 'right' });
 
       if (billData.previousDue && billData.previousDue > 0) {
-        lineY += 14;
+        lineY += 13;
         doc.setTextColor(180, 83, 9);
         doc.text('Previous Outstanding Due:', summaryBoxX + 10, lineY);
-        doc.text(`+ ₹${Number(billData.previousDue).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+        doc.text(`+ ₹${Number(billData.previousDue).toFixed(2)}`, pageWidth - 45, lineY, { align: 'right' });
       }
 
-      lineY += 8;
+      lineY += 7;
       doc.setDrawColor(203, 213, 225);
-      doc.line(summaryBoxX + 10, lineY, pageWidth - 50, lineY);
+      doc.line(summaryBoxX + 10, lineY, pageWidth - 45, lineY);
 
-      lineY += 14;
+      lineY += 13;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
+      doc.setFontSize(9);
       doc.setTextColor(15, 23, 42);
       doc.text('Grand Total:', summaryBoxX + 10, lineY);
       doc.setTextColor(5, 150, 105);
-      doc.text(`₹${Number(billData.grandTotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+      doc.text(`₹${Number(billData.grandTotal).toFixed(2)}`, pageWidth - 45, lineY, { align: 'right' });
 
-      lineY += 14;
+      lineY += 13;
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
       doc.text('Amount Received:', summaryBoxX + 10, lineY);
-      doc.text(`₹${Number(billData.amountPaid || billData.grandTotal).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+      doc.text(`₹${Number(billData.amountPaid || billData.grandTotal).toFixed(2)}`, pageWidth - 45, lineY, { align: 'right' });
 
       if (billData.remainingDue && billData.remainingDue > 0) {
-        lineY += 14;
+        lineY += 13;
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(220, 38, 38);
         doc.text('Current Balance Due:', summaryBoxX + 10, lineY);
-        doc.text(`₹${Number(billData.remainingDue).toFixed(2)}`, pageWidth - 50, lineY, { align: 'right' });
+        doc.text(`₹${Number(billData.remainingDue).toFixed(2)}`, pageWidth - 45, lineY, { align: 'right' });
       }
 
-      const footerY = Math.max(finalY + 135, 740);
+      const footerY = Math.max(finalY + 130, 745);
+
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setTextColor(100, 116, 139);
-      doc.text('TERMS & CONDITIONS:', 40, footerY);
+      doc.text('TERMS & CONDITIONS:', 35, footerY);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.setTextColor(148, 163, 184);
-      doc.text('1. Please verify batch & expiry details before leaving counter.', 40, footerY + 12);
-      doc.text('2. Refrigerated & Schedule items cannot be returned.', 40, footerY + 22);
-      doc.text('3. Outstanding dues must be cleared on or before next purchase.', 40, footerY + 32);
+      doc.text('1. Please verify batch & expiry details before leaving counter.', 35, footerY + 11);
+      doc.text('2. Refrigerated & Schedule items cannot be returned.', 35, footerY + 20);
+      doc.text('3. Outstanding dues must be cleared on or before next purchase.', 35, footerY + 29);
 
-      const sigX = pageWidth - 160;
+      const sigX = pageWidth - 150;
       doc.setDrawColor(203, 213, 225);
-      doc.line(sigX, footerY + 20, pageWidth - 40, footerY + 20);
+      doc.line(sigX, footerY + 16, pageWidth - 35, footerY + 16);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setTextColor(71, 85, 105);
-      doc.text('Dispensing Pharmacist', sigX + 15, footerY + 32);
+      doc.text('Dispensing Pharmacist', sigX + 12, footerY + 28);
 
       doc.save(`${billData.invoiceNumber}.pdf`);
     }
@@ -3325,7 +3320,7 @@
     }
 
     // ==========================================
-    // 8. INITIAL BOOTSTRAP
+    // 12. INITIAL BOOTSTRAP
     // ==========================================
     checkServerHealth();
     fetchInventory();
