@@ -11,6 +11,7 @@ const medicineRoutes = require('./routes/medicineRoutes');
 const billingRoutes = require('./routes/billingRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const billRoutes = require('./routes/billRoutes');
+const doctorRoutes = require('./routes/doctorRoutes');
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/medicines', medicineRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/bills', billRoutes);
+app.use('/api/doctors', doctorRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
