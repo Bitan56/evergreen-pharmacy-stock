@@ -121,7 +121,7 @@
         <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Point of Sale</h2>
-            <p class="text-[11px] sm:text-xs text-slate-500">Scan barcodes or search medicines by name and batch</p>
+            <p class="text-[11px] sm:text-xs text-slate-500">Scan codes or search medicines by name, batch, or pack</p>
           </div>
           <button onclick="startCameraScanner('pos')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" /></svg>
@@ -141,12 +141,12 @@
           </div>
 
           <div class="relative">
-            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Search Name or Batch</label>
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Search Name, Salt or Pack</label>
             <input 
               type="text" 
               id="pos-medicine-search" 
               oninput="handlePosMedicineSearch(this.value)" 
-              placeholder="Type name or batch..." 
+              placeholder="Type name, batch, or pack..." 
               autocomplete="off" 
               class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" 
             />
@@ -194,7 +194,7 @@
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
               <tr>
-                <th class="p-3">Medicine</th>
+                <th class="p-3">Medicine Description</th>
                 <th class="p-3">Batch</th>
                 <th class="p-3">Exp Date</th>
                 <th class="p-3">Unit Price</th>
@@ -365,9 +365,16 @@
             </div>
           </div>
 
-          <div>
-            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
-            <input type="text" id="form-name" required placeholder="e.g. PAN 40, Paracetamol 500mg" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+          <!-- Product Identification: Name & Pack Of -->
+          <div class="grid grid-cols-3 gap-2.5">
+            <div class="col-span-2">
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Medicine Name *</label>
+              <input type="text" id="form-name" required placeholder="e.g. PAN 40, Paracetamol" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white" />
+            </div>
+            <div>
+              <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">Pack Of (Unit)</label>
+              <input type="text" id="form-pack-of" placeholder="e.g. 10 Tabs, 100ml" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 bg-white font-medium text-slate-700" />
+            </div>
           </div>
 
           <div>
@@ -462,7 +469,7 @@
               <h2 class="text-base sm:text-lg font-bold text-slate-800">Current Stock Batches</h2>
               <p class="text-[11px] text-slate-500">Select checkboxes below to delete multiple records at once</p>
             </div>
-            <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search name, batch, or code..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
+            <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search name, salt, batch, or pack..." class="w-full sm:w-64 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500" />
           </div>
 
           <div class="hidden sm:block overflow-x-auto">
@@ -478,7 +485,7 @@
                       title="Select All"
                     />
                   </th>
-                  <th class="p-3">Name</th>
+                  <th class="p-3">Medicine Description</th>
                   <th class="p-3">Batch</th>
                   <th class="p-3">Barcode Status</th>
                   <th class="p-3">Stock</th>
@@ -545,7 +552,7 @@
                 type="text" 
                 id="details-search-keyword" 
                 oninput="renderMedicineDirectory()" 
-                placeholder="Name, salt, batch, barcode..." 
+                placeholder="Name, salt, pack, barcode..." 
                 class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-emerald-500 bg-white" 
               />
             </div>
@@ -601,7 +608,7 @@
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
               <tr>
-                <th class="p-3">Medicine & Salt</th>
+                <th class="p-3">Medicine Description</th>
                 <th class="p-3">Batch</th>
                 <th class="p-3">Barcode Status</th>
                 <th class="p-3">Invoice & Dealer</th>
@@ -872,6 +879,10 @@
 
       <div class="grid grid-cols-2 gap-3 text-xs">
         <div class="p-2.5 bg-slate-50 rounded-lg">
+          <span class="text-slate-400 block text-[10px] uppercase font-bold">Pack Of</span>
+          <span id="modal-med-pack" class="font-bold text-slate-800"></span>
+        </div>
+        <div class="p-2.5 bg-slate-50 rounded-lg">
           <span class="text-slate-400 block text-[10px] uppercase font-bold">Batch Number</span>
           <span id="modal-med-batch" class="font-mono font-bold text-slate-800"></span>
         </div>
@@ -907,7 +918,7 @@
           <span class="text-slate-400 block text-[10px] uppercase font-bold">Expiry Date</span>
           <div id="modal-med-expiry"></div>
         </div>
-        <div class="p-2.5 bg-slate-50 rounded-lg">
+        <div class="p-2.5 bg-slate-50 rounded-lg col-span-2">
           <span class="text-slate-400 block text-[10px] uppercase font-bold">Date of Purchase</span>
           <span id="modal-med-purchased" class="font-medium text-slate-700"></span>
         </div>
@@ -926,7 +937,7 @@
 
   <script>
     // ==========================================
-    // 0. GLOBAL EXPIRY HELPER & CORE CONFIG
+    // 0. GLOBAL EXPIRY HELPER & STATE
     // ==========================================
     window.getExpiryBadge = function(dateStr) {
       if (!dateStr) return '<span class="text-slate-400 text-xs">No Expiry</span>';
@@ -1030,6 +1041,8 @@
       const safeInventory = Array.isArray(inventory) ? inventory : [];
       const filtered = safeInventory.filter(m => 
         (m.name && m.name.toLowerCase().includes(q)) || 
+        (m.genericName && m.genericName.toLowerCase().includes(q)) ||
+        (m.packOf && m.packOf.toLowerCase().includes(q)) ||
         (m.barcode && m.barcode.includes(q)) ||
         (m.batchNumber && m.batchNumber.toLowerCase().includes(q))
       );
@@ -1052,6 +1065,8 @@
       if (tbody) {
         tbody.innerHTML = filtered.map(item => {
           const isChecked = selectedInventoryIds.has(item._id);
+          const packDisplay = item.packOf ? `<span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-1.5 py-0.5 rounded ml-1.5 border border-slate-200">${item.packOf}</span>` : '';
+          
           return `
             <tr class="hover:bg-slate-50 transition ${isChecked ? 'bg-emerald-50/40' : ''}">
               <td class="p-3 text-center">
@@ -1063,7 +1078,10 @@
                 />
               </td>
               <td class="p-3">
-                <div class="font-bold text-slate-800">${item.name}</div>
+                <div class="font-bold text-slate-800 flex items-center flex-wrap">
+                  <span>${item.name}</span>
+                  ${packDisplay}
+                </div>
                 <div class="text-xs text-slate-400">${item.genericName || 'No salt recorded'}</div>
               </td>
               <td class="p-3 font-mono text-xs font-semibold text-slate-700">${item.batchNumber}</td>
@@ -1096,6 +1114,8 @@
       if (mobileList) {
         mobileList.innerHTML = filtered.map(item => {
           const isChecked = selectedInventoryIds.has(item._id);
+          const packDisplay = item.packOf ? `<span class="bg-slate-100 text-slate-700 text-[9px] font-semibold px-1 py-0.5 rounded ml-1 border border-slate-200">${item.packOf}</span>` : '';
+
           return `
             <div class="bg-white border ${isChecked ? 'border-emerald-400 bg-emerald-50/20' : 'border-slate-200'} rounded-lg p-3 space-y-2 transition">
               <div class="flex justify-between items-start">
@@ -1107,7 +1127,10 @@
                     class="w-4 h-4 mt-0.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" 
                   />
                   <div>
-                    <h4 class="font-bold text-xs text-slate-800">${item.name}</h4>
+                    <h4 class="font-bold text-xs text-slate-800 flex items-center flex-wrap">
+                      <span>${item.name}</span>
+                      ${packDisplay}
+                    </h4>
                     <p class="text-[10px] text-slate-500">${item.genericName || 'No salt'}</p>
                     <div class="mt-1">${renderBarcodeStatusBadge(item)}</div>
                   </div>
@@ -1155,6 +1178,8 @@
       const safeInventory = Array.isArray(inventory) ? inventory : [];
       const filtered = safeInventory.filter(m => 
         (m.name && m.name.toLowerCase().includes(q)) || 
+        (m.genericName && m.genericName.toLowerCase().includes(q)) ||
+        (m.packOf && m.packOf.toLowerCase().includes(q)) ||
         (m.barcode && m.barcode.includes(q)) ||
         (m.batchNumber && m.batchNumber.toLowerCase().includes(q))
       );
@@ -1285,7 +1310,9 @@
             return `
               <div onclick='openMedicineDetailsModal(${JSON.stringify(item)})' class="p-2 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between transition">
                 <div class="min-w-0 pr-2">
-                  <p class="font-bold text-slate-800 text-xs truncate">${item.name}</p>
+                  <p class="font-bold text-slate-800 text-xs truncate">
+                    ${item.name} ${item.packOf ? '(' + item.packOf + ')' : ''}
+                  </p>
                   <p class="text-[10px] text-slate-500 font-mono">B: ${item.batchNumber} | Stock: <b>${item.quantity}</b></p>
                 </div>
                 <span class="text-[10px] ${textColor} font-semibold flex-shrink-0">${statusText}</span>
@@ -1302,7 +1329,9 @@
             return `
               <div onclick='openMedicineDetailsModal(${JSON.stringify(item)})' class="p-2 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between transition">
                 <div class="min-w-0 pr-2">
-                  <p class="font-bold text-slate-800 text-xs truncate">${item.name}</p>
+                  <p class="font-bold text-slate-800 text-xs truncate">
+                    ${item.name} ${item.packOf ? '(' + item.packOf + ')' : ''}
+                  </p>
                   <p class="text-[10px] text-slate-500 font-mono">Batch: ${item.batchNumber} | Dealer: ${item.dealerName || 'N/A'}</p>
                 </div>
                 <span class="text-[10px] font-black px-2 py-0.5 rounded ${item.quantity === 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'} flex-shrink-0">
@@ -1324,6 +1353,7 @@
     function openMedicineDetailsModal(med) {
       document.getElementById('modal-med-name').innerText = med.name || 'Unknown';
       document.getElementById('modal-med-generic').innerText = med.genericName || 'No Salt recorded';
+      document.getElementById('modal-med-pack').innerText = med.packOf || 'Not specified';
       document.getElementById('modal-med-batch').innerText = med.batchNumber || 'N/A';
       
       const barcodeElement = document.getElementById('modal-med-barcode');
@@ -1441,6 +1471,7 @@
               id: idx + 1,
               name: it.name || 'Unnamed Medicine',
               genericName: it.genericName || '',
+              packOf: it.packOf || it.pack || '',
               batchNumber: it.batchNumber || '',
               billedQty: Number(it.quantity || it.qty || 1),
               receivedQty: Number(it.receivedQty || it.quantity || it.qty || 1),
@@ -1541,6 +1572,7 @@
         if (!searchVal) return true;
         return (item.name && item.name.toLowerCase().includes(searchVal)) ||
                (item.genericName && item.genericName.toLowerCase().includes(searchVal)) ||
+               (item.packOf && item.packOf.toLowerCase().includes(searchVal)) ||
                (item.batchNumber && item.batchNumber.toLowerCase().includes(searchVal));
       });
 
@@ -1577,7 +1609,10 @@
               />
             </td>
             <td class="p-2.5">
-              <span class="font-bold text-slate-800 block">${item.name}</span>
+              <div class="font-bold text-slate-800 flex items-center flex-wrap">
+                <span>${item.name}</span>
+                ${item.packOf ? `<span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-1.5 py-0.5 rounded ml-1.5 border border-slate-200">${item.packOf}</span>` : ''}
+              </div>
               <span class="text-[10px] text-slate-400 font-mono">${item.genericName || 'No salt recorded'}</span>
             </td>
             <td class="p-2.5 font-mono text-slate-700">${item.batchNumber || '-'}</td>
@@ -1659,7 +1694,7 @@
     }
 
     // ==========================================
-    // 7. TABS NAVIGATION & GENERAL EVENT HANDLERS
+    // 7. TABS NAVIGATION & GENERAL HANDLERS
     // ==========================================
     function switchTab(tab) {
       document.getElementById('view-pos').classList.toggle('hidden', tab !== 'pos');
@@ -1788,6 +1823,7 @@
 
       document.getElementById('form-name').value = med.name || '';
       document.getElementById('form-generic').value = med.genericName || '';
+      document.getElementById('form-pack-of').value = med.packOf || '';
       document.getElementById('form-batch').value = med.batchNumber || '';
       document.getElementById('form-dealer-name').value = med.dealerName || '';
       document.getElementById('form-purchase-invoice').value = med.purchaseInvoiceNumber || '';
@@ -1829,6 +1865,7 @@
 
       document.getElementById('form-name').value = med.name || '';
       document.getElementById('form-generic').value = med.genericName || '';
+      document.getElementById('form-pack-of').value = med.packOf || '';
       document.getElementById('form-batch').value = med.batchNumber || '';
       document.getElementById('form-dealer-name').value = med.dealerName || '';
       document.getElementById('form-purchase-invoice').value = med.purchaseInvoiceNumber || '';
@@ -1855,7 +1892,7 @@
 
     function openAttachBarcodeModal(med) {
       document.getElementById('attach-modal-med-id').value = med._id;
-      document.getElementById('attach-modal-med-title').innerText = `${med.name} (Batch: ${med.batchNumber})`;
+      document.getElementById('attach-modal-med-title').innerText = `${med.name} ${med.packOf ? '(' + med.packOf + ')' : ''} (Batch: ${med.batchNumber})`;
       document.getElementById('attach-modal-barcode-input').value = '';
       document.getElementById('attach-barcode-modal').classList.remove('hidden');
       setTimeout(() => document.getElementById('attach-modal-barcode-input').focus(), 100);
@@ -1908,6 +1945,7 @@
         const matchesKeyword = !keyword || 
           (item.name && item.name.toLowerCase().includes(keyword)) ||
           (item.genericName && item.genericName.toLowerCase().includes(keyword)) ||
+          (item.packOf && item.packOf.toLowerCase().includes(keyword)) ||
           (item.batchNumber && item.batchNumber.toLowerCase().includes(keyword)) ||
           (item.barcode && item.barcode.toLowerCase().includes(keyword)) ||
           (item.dealerName && item.dealerName.toLowerCase().includes(keyword));
@@ -1960,7 +1998,10 @@
         tbody.innerHTML = filtered.map(item => `
           <tr class="hover:bg-slate-50">
             <td class="p-3">
-              <span class="font-bold text-slate-800 block">${item.name}</span>
+              <div class="font-bold text-slate-800 flex items-center flex-wrap">
+                <span>${item.name}</span>
+                ${item.packOf ? `<span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-1.5 py-0.5 rounded ml-1.5 border border-slate-200">${item.packOf}</span>` : ''}
+              </div>
               <span class="text-xs text-slate-400">${item.genericName || 'No salt recorded'}</span>
             </td>
             <td class="p-3 font-mono text-xs font-semibold text-slate-700">${item.batchNumber}</td>
@@ -2000,7 +2041,10 @@
           <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
             <div class="flex justify-between items-start">
               <div>
-                <h4 class="font-bold text-xs text-slate-800">${item.name}</h4>
+                <h4 class="font-bold text-xs text-slate-800 flex items-center flex-wrap">
+                  <span>${item.name}</span>
+                  ${item.packOf ? `<span class="bg-slate-100 text-slate-700 text-[9px] font-semibold px-1 py-0.5 rounded ml-1 border border-slate-200">${item.packOf}</span>` : ''}
+                </h4>
                 <p class="text-[10px] text-slate-500">${item.genericName || 'No salt'}</p>
                 <div class="mt-1">${renderBarcodeStatusBadge(item)}</div>
               </div>
@@ -2073,10 +2117,11 @@
         const purDate = it.purchaseDate ? it.purchaseDate.split('T')[0] : (it.createdAt ? it.createdAt.split('T')[0] : '-');
         const expDate = it.expiryDate ? it.expiryDate.split('T')[0] : '-';
         const codeDisplay = isItemUnmarked(it) ? 'NO BARCODE' : it.barcode;
+        const nameDisplay = it.packOf ? `${it.name} (${it.packOf})` : it.name;
 
         return [
           idx + 1,
-          it.name,
+          nameDisplay,
           it.genericName || '-',
           it.batchNumber,
           codeDisplay,
@@ -2094,7 +2139,7 @@
       doc.autoTable({
         startY: 60,
         margin: { left: 30, right: 30 },
-        head: [['#', 'Medicine', 'Salt Composition', 'Batch', 'Barcode', 'Invoice #', 'Dealer', 'Qty', 'Cost', 'Sell', 'Pur Date', 'Exp Date', 'Rack']],
+        head: [['#', 'Medicine & Pack', 'Salt Composition', 'Batch', 'Barcode', 'Invoice #', 'Dealer', 'Qty', 'Cost', 'Sell', 'Pur Date', 'Exp Date', 'Rack']],
         body: tableRows,
         theme: 'grid',
         headStyles: {
@@ -2111,8 +2156,8 @@
         },
         columnStyles: {
           0: { cellWidth: 20, halign: 'center' },
-          1: { cellWidth: 75 },
-          2: { cellWidth: 80 },
+          1: { cellWidth: 85 },
+          2: { cellWidth: 70 },
           3: { cellWidth: 50, font: 'courier' },
           4: { cellWidth: 70, font: 'courier' },
           5: { cellWidth: 55 },
@@ -2197,6 +2242,7 @@
         hasBarcode: itemHasBarcode,
         name: document.getElementById('form-name').value.trim(),
         genericName: document.getElementById('form-generic').value.trim(),
+        packOf: document.getElementById('form-pack-of').value.trim(), // <--- sent to backend
         batchNumber: document.getElementById('form-batch').value.trim(),
         dealerName: document.getElementById('form-dealer-name').value.trim(),
         purchaseInvoiceNumber: document.getElementById('form-purchase-invoice').value.trim(),
@@ -2254,8 +2300,9 @@
       const safeInventory = Array.isArray(inventory) ? inventory : [];
       const matches = safeInventory.filter(item => 
         (item.name && item.name.toLowerCase().includes(q)) ||
-        (item.batchNumber && item.batchNumber.toLowerCase().includes(q)) ||
-        (item.genericName && item.genericName.toLowerCase().includes(q))
+        (item.genericName && item.genericName.toLowerCase().includes(q)) ||
+        (item.packOf && item.packOf.toLowerCase().includes(q)) ||
+        (item.batchNumber && item.batchNumber.toLowerCase().includes(q))
       ).slice(0, 6);
 
       if (matches.length === 0) {
@@ -2267,6 +2314,7 @@
       suggestionsBox.innerHTML = matches.map(med => {
         const isExpired = new Date(med.expiryDate) < new Date();
         const expStr = med.expiryDate ? new Date(med.expiryDate).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) : 'N/A';
+        const packDisplay = med.packOf ? ` • Pack: <b>${med.packOf}</b>` : '';
         
         return `
           <div 
@@ -2279,7 +2327,7 @@
                 ${isExpired ? '<span class="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.2 rounded font-bold">Expired</span>' : ''}
               </div>
               <p class="text-[10px] text-slate-500 font-mono">
-                Batch: <b class="text-slate-700">${med.batchNumber}</b> • Exp: ${expStr} • Stock: <b class="${med.quantity < 2 ? 'text-rose-600' : 'text-slate-700'}">${med.quantity}</b>
+                Batch: <b class="text-slate-700">${med.batchNumber}</b>${packDisplay} • Exp: ${expStr} • Stock: <b class="${med.quantity < 2 ? 'text-rose-600' : 'text-slate-700'}">${med.quantity}</b>
               </p>
             </div>
             <div class="text-right flex-shrink-0">
@@ -2326,6 +2374,7 @@
         cart.push({
           medicineId: med._id,
           name: med.name,
+          packOf: med.packOf || '',
           batchNumber: med.batchNumber,
           expiryDate: expFormatted,
           unitPrice: med.price,
@@ -2533,6 +2582,7 @@
           const med = await res.json();
           document.getElementById('form-name').value = med.name || '';
           document.getElementById('form-generic').value = med.genericName || '';
+          document.getElementById('form-pack-of').value = med.packOf || '';
           document.getElementById('form-batch').value = med.batchNumber || '';
           document.getElementById('form-dealer-name').value = med.dealerName || '';
           document.getElementById('form-purchase-invoice').value = med.purchaseInvoiceNumber || '';
@@ -2668,7 +2718,7 @@
     let lastKeyTime = Date.now();
 
     window.addEventListener('keydown', (e) => {
-      if (['pos-cust-name', 'pos-cust-phone', 'pos-amount-paid', 'pos-medicine-search', 'form-name', 'form-generic', 'form-batch', 'form-dealer-name', 'form-purchase-invoice', 'form-cost-price', 'form-price', 'form-rack', 'inventory-search', 'customer-search', 'details-search-keyword', 'details-search-invoices', 'attach-modal-barcode-input', 'bill-matching-search'].includes(e.target.id)) {
+      if (['pos-cust-name', 'pos-cust-phone', 'pos-amount-paid', 'pos-medicine-search', 'form-name', 'form-generic', 'form-pack-of', 'form-batch', 'form-dealer-name', 'form-purchase-invoice', 'form-cost-price', 'form-price', 'form-rack', 'inventory-search', 'customer-search', 'details-search-keyword', 'details-search-invoices', 'attach-modal-barcode-input', 'bill-matching-search'].includes(e.target.id)) {
         return;
       }
 
@@ -2750,6 +2800,7 @@
           cart.push({
             medicineId: med._id,
             name: med.name,
+            packOf: med.packOf || '',
             batchNumber: med.batchNumber,
             expiryDate: expFormatted,
             unitPrice: med.price,
@@ -2824,27 +2875,35 @@
         return;
       }
 
-      tbody.innerHTML = cart.map(item => `
-        <tr class="hover:bg-slate-50">
-          <td class="p-3 font-semibold text-slate-800">${item.name}</td>
-          <td class="p-3 text-slate-500 font-mono text-xs">${item.batchNumber}</td>
-          <td class="p-3 text-amber-700 font-bold text-xs">${item.expiryDate}</td>
-          <td class="p-3 text-slate-700">₹${item.unitPrice.toFixed(2)}</td>
-          <td class="p-3 text-center">
-            <input type="number" min="1" max="${item.maxStock}" value="${item.quantity}" onchange="updateCartQuantity('${item.medicineId}', this.value)" class="w-16 border border-slate-300 rounded px-2 py-1 text-center font-bold" />
-            <span class="text-xs text-slate-400 block mt-0.5">Avail: ${item.maxStock}</span>
-          </td>
-          <td class="p-3 text-right font-bold text-slate-900">₹${item.total.toFixed(2)}</td>
-          <td class="p-3 text-center">
-            <button onclick="removeFromCart('${item.medicineId}')" class="text-rose-500 hover:text-rose-700 font-bold">&times;</button>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = cart.map(item => {
+        const packTag = item.packOf ? `<span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-1.5 py-0.5 rounded ml-1 border border-slate-200">${item.packOf}</span>` : '';
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3">
+              <span class="font-semibold text-slate-800">${item.name}</span>
+              ${packTag}
+            </td>
+            <td class="p-3 text-slate-500 font-mono text-xs">${item.batchNumber}</td>
+            <td class="p-3 text-amber-700 font-bold text-xs">${item.expiryDate}</td>
+            <td class="p-3 text-slate-700">₹${item.unitPrice.toFixed(2)}</td>
+            <td class="p-3 text-center">
+              <input type="number" min="1" max="${item.maxStock}" value="${item.quantity}" onchange="updateCartQuantity('${item.medicineId}', this.value)" class="w-16 border border-slate-300 rounded px-2 py-1 text-center font-bold" />
+              <span class="text-xs text-slate-400 block mt-0.5">Avail: ${item.maxStock}</span>
+            </td>
+            <td class="p-3 text-right font-bold text-slate-900">₹${item.total.toFixed(2)}</td>
+            <td class="p-3 text-center">
+              <button onclick="removeFromCart('${item.medicineId}')" class="text-rose-500 hover:text-rose-700 font-bold">&times;</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
 
       mobileList.innerHTML = cart.map(item => `
         <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex justify-between items-center gap-2">
           <div class="flex-1 min-w-0">
-            <h4 class="font-bold text-xs text-slate-800 truncate">${item.name}</h4>
+            <h4 class="font-bold text-xs text-slate-800 truncate">
+              ${item.name} ${item.packOf ? '(' + item.packOf + ')' : ''}
+            </h4>
             <p class="text-[10px] text-slate-500 font-mono">B: ${item.batchNumber} | Exp: ${item.expiryDate} | ₹${item.unitPrice.toFixed(2)}</p>
             <p class="text-xs font-bold text-emerald-700 mt-1">₹${item.total.toFixed(2)}</p>
           </div>
@@ -3015,9 +3074,11 @@
           expDisplay = !isNaN(d) ? d.toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) : it.expiryDate;
         }
 
+        const nameWithPack = it.packOf ? `${it.name} (${it.packOf})` : it.name;
+
         return [
           idx + 1,
-          it.name,
+          nameWithPack,
           it.batchNumber,
           expDisplay,
           it.quantity,

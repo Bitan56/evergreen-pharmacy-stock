@@ -34,7 +34,23 @@ router.get('/alerts/expiring', async (req, res) => {
 });
 
 // ==========================================
-// 3. SCAN / LOOKUP BY BARCODE OR BATCH
+// 3. LOW STOCK ALERT (< threshold, default 2)
+// ==========================================
+router.get('/alerts/low-stock', async (req, res) => {
+  try {
+    const threshold = parseInt(req.query.threshold) || 2;
+    const lowStockMedicines = await Medicine.find({
+      quantity: { $lt: threshold }
+    }).sort({ quantity: 1, name: 1 });
+
+    res.status(200).json(lowStockMedicines);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// 4. SCAN / LOOKUP BY BARCODE OR BATCH
 // ==========================================
 router.get('/scan/:barcode', async (req, res) => {
   try {
@@ -54,7 +70,7 @@ router.get('/scan/:barcode', async (req, res) => {
 });
 
 // ==========================================
-// 4. ADD / RESTOCK / EDIT MEDICINES (Single & Multi-Barcode)
+// 5. ADD / RESTOCK / EDIT MEDICINE (Includes packOf)
 // ==========================================
 router.post('/upsert', async (req, res) => {
   try {
@@ -65,6 +81,7 @@ router.post('/upsert', async (req, res) => {
       hasBarcode,
       name,
       genericName,
+      packOf,
       batchNumber,
       dealerName,
       purchaseInvoiceNumber,
@@ -84,6 +101,8 @@ router.post('/upsert', async (req, res) => {
     }
 
     const cleanName = name.trim();
+    const cleanGeneric = (genericName || '').trim();
+    const cleanPackOf = (packOf || '').trim();
     const cleanBatch = batchNumber.trim();
     const cleanDealer = (dealerName || '').trim();
     const cleanInvoice = (purchaseInvoiceNumber || '').trim();
@@ -95,7 +114,8 @@ router.post('/upsert', async (req, res) => {
     if (medicineId) {
       const updateData = {
         name: cleanName,
-        genericName: (genericName || '').trim(),
+        genericName: cleanGeneric,
+        packOf: cleanPackOf,
         batchNumber: cleanBatch,
         dealerName: cleanDealer,
         purchaseInvoiceNumber: cleanInvoice,
@@ -137,7 +157,6 @@ router.post('/upsert', async (req, res) => {
 
     let isMarkedNoBarcode = false;
 
-    // If no barcode provided, flag item and assign internal temporary ID
     if (codeList.length === 0) {
       const prefix = cleanName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || 'MED';
       codeList = [`NOCODE-${prefix}-${cleanBatch}-${Date.now().toString().slice(-4)}`];
@@ -154,20 +173,7 @@ router.post('/upsert', async (req, res) => {
         return Medicine.findOneAndUpdate(
           { barcode: cleanCode },
           {
-            $set: {
-              name: cleanName,
-              genericName: (genericName || '').trim(),
-              batchNumber: cleanBatch,
-              dealerName: cleanDealer,
-              purchaseInvoiceNumber: cleanInvoice,
-              costPrice: Number(costPrice),
-              price: Number(price),
-              purchaseDate: finalPurchaseDate,
-              expiryDate: finalExpiryDate,
-              rackLocation: cleanRack,
-              hasBarcode: effectiveHasBarcode
-            },
-            $inc: { quantity: Number(quantity || 0) }
+            $set: {               name: cleanName,               genericName: cleanGeneric,               packOf: cleanPackOf,               batchNumber: cleanBatch,               dealerName: cleanDealer,               purchaseInvoiceNumber: cleanInvoice,               costPrice: Number(costPrice),               price: Number(price),               purchaseDate: finalPurchaseDate,               expiryDate: finalExpiryDate,               rackLocation: cleanRack,               hasBarcode: effectiveHasBarcode             },$inc: { quantity: Number(quantity || 0) }
           },
           { new: true, upsert: true, runValidators: true }
         );
@@ -181,7 +187,7 @@ router.post('/upsert', async (req, res) => {
 });
 
 // ==========================================
-// 5. ATTACH BARCODE TO AN UNMARKED MEDICINE
+// 6. ATTACH BARCODE TO AN UNMARKED MEDICINE
 // ==========================================
 router.patch('/:id/attach-barcode', async (req, res) => {
   try {
@@ -192,7 +198,6 @@ router.patch('/:id/attach-barcode', async (req, res) => {
 
     const cleanBarcode = barcode.trim();
 
-    // Prevent assigning a barcode that already belongs to a different item
     const duplicate = await Medicine.findOne({
       barcode: cleanBarcode,
       _id: { $ne: req.params.id }
@@ -226,7 +231,7 @@ router.patch('/:id/attach-barcode', async (req, res) => {
 });
 
 // ==========================================
-// 6. BULK IMPORT VIA JSON FILE
+// 7. BULK IMPORT VIA JSON FILE
 // ==========================================
 router.post('/bulk-upload', async (req, res) => {
   try {
@@ -255,6 +260,7 @@ router.post('/bulk-upload', async (req, res) => {
             $set: {
               name: cleanName,
               genericName: (item.genericName || '').trim(),
+              packOf: (item.packOf || item.pack || '').trim(),
               batchNumber: cleanBatch,
               dealerName: (item.dealerName || '').trim(),
               purchaseInvoiceNumber: (item.purchaseInvoiceNumber || '').trim(),
@@ -284,21 +290,8 @@ router.post('/bulk-upload', async (req, res) => {
 });
 
 // ==========================================
-// 7. DELETE MEDICINE RECORD
+// 8. BULK DELETE MULTIPLE MEDICINES
 // ==========================================
-router.delete('/:id', async (req, res) => {
-  try {
-    const deleted = await Medicine.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Medicine record not found.' });
-    }
-    res.status(200).json({ message: 'Medicine deleted successfully.' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /api/medicines/bulk-delete - Delete multiple medicines by ID
 router.post('/bulk-delete', async (req, res) => {
   try {
     const { ids } = req.body;
@@ -317,16 +310,16 @@ router.post('/bulk-delete', async (req, res) => {
   }
 });
 
-// GET /api/medicines/alerts/low-stock - Fetch medicines with quantity < threshold (default: 2)
-// GET /api/medicines/alerts/low-stock - Fetch sub-2-unit inventory
-router.get('/alerts/low-stock', async (req, res) => {
+// ==========================================
+// 9. DELETE SINGLE MEDICINE RECORD
+// ==========================================
+router.delete('/:id', async (req, res) => {
   try {
-    const threshold = parseInt(req.query.threshold) || 2;
-    const lowStockMedicines = await Medicine.find({
-      quantity: { $lt: threshold }
-    }).sort({ quantity: 1, name: 1 });
-
-    res.status(200).json(lowStockMedicines);
+    const deleted = await Medicine.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Medicine record not found.' });
+    }
+    res.status(200).json({ message: 'Medicine deleted successfully.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -2,18 +2,20 @@ const mongoose = require('mongoose');
 
 const medicineSchema = new mongoose.Schema(
   {
-    barcode: { type: String, required: true, unique: true, index: true },
-    name: { type: String, required: true, index: true },
-    genericName: { type: String, default: '' },
-    batchNumber: { type: String, required: true, index: true },
-    quantity: { type: Number, required: true, min: 0 },
-    costPrice: { type: Number, required: true, min: 0 },
-    price: { type: Number, required: true, min: 0 },
-    dealerName: { type: String, default: '', index: true }, // <--- Dealer / Supplier Name
-    purchaseInvoiceNumber: { type: String, default: '', index: true }, // <--- Purchase Invoice No.
+    name: { type: String, required: true, trim: true },
+    genericName: { type: String, default: '', trim: true },
+    packOf: { type: String, default: '', trim: true }, // e.g. "10 Tablets", "15 Capsules", "100 ml"
+    batchNumber: { type: String, required: true, trim: true },
+    barcode: { type: String, required: true, trim: true, unique: true },
+    hasBarcode: { type: Boolean, default: true },
+    dealerName: { type: String, default: '', trim: true },
+    purchaseInvoiceNumber: { type: String, default: '', trim: true },
+    quantity: { type: Number, required: true, default: 0 },
+    costPrice: { type: Number, required: true, default: 0 },
+    price: { type: Number, required: true, default: 0 },
     purchaseDate: { type: Date, default: Date.now },
-    expiryDate: { type: Date, required: true, index: true },
-    rackLocation: { type: String, default: 'General Shelf' }
+    expiryDate: { type: Date, required: true },
+    rackLocation: { type: String, default: 'General Shelf', trim: true }
   },
   { timestamps: true }
 );
