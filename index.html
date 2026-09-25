@@ -244,7 +244,7 @@
     <!-- ================= TAB 2: STOCK & LOOKUP ================= -->
     <section id="view-inventory" class="hidden space-y-6">
 
-      <!-- Action & Directory Filtering Bar with Barcode Scan Search -->
+      <!-- Action & Directory Filtering Bar -->
       <div class="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-5 shadow-sm space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
@@ -456,7 +456,7 @@
   </main>
 
   <!-- ================= FIXED BOTTOM MOBILE NAVIGATION ================= -->
-  <!-- Direct root child inside <body> -->
+  <!-- Direct root child inside <body> to prevent being hidden by modal containers -->
   <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-2 flex justify-around items-center z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
     <button id="mobile-nav-pos" onclick="switchTab('pos')" class="flex flex-col items-center justify-center text-emerald-600 font-bold text-[10px] active:scale-95 transition-transform flex-1">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -701,163 +701,6 @@
             </button>
           </div>
         </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= BILL MEDICINE MATCHING MODAL ================= -->
-  <div id="bill-matching-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-2.5 sm:p-5 hidden">
-    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl relative overflow-hidden">
-      <div class="p-3.5 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50">
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 class="font-bold text-sm sm:text-lg text-slate-800">Bill Verification & Matching</h3>
-            <span id="bill-progress-badge" class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">No bill active</span>
-          </div>
-          <p class="text-[10px] sm:text-xs text-slate-500">Upload purchase bill JSON, filter with search, check off items, and log shortages</p>
-        </div>
-
-        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          <label class="cursor-pointer inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-            <span>Upload Bill</span>
-            <input type="file" id="bill-json-input" accept=".json" onchange="handleBillJsonUpload(event)" class="hidden" />
-          </label>
-
-          <button type="button" id="bill-clear-btn" onclick="eraseActiveBillChecklist()" class="hidden text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold px-2.5 py-1.5 rounded-lg border border-rose-200 transition">Erase Bill</button>
-          <button onclick="closeBillMatchingModal()" class="text-slate-400 hover:text-slate-600 p-1 text-2xl font-bold leading-none">&times;</button>
-        </div>
-      </div>
-
-      <div class="p-2.5 sm:p-4 border-b border-slate-100 bg-white space-y-2">
-        <div id="bill-meta-bar" class="hidden text-xs flex flex-wrap justify-between items-center gap-1.5 text-slate-600 pb-1">
-          <div>
-            <span class="font-bold text-slate-800" id="bill-meta-invoice">Invoice: -</span> • 
-            <span id="bill-meta-dealer">Dealer: -</span>
-          </div>
-          <span class="text-[10px] sm:text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Synced to Database
-          </span>
-        </div>
-
-        <div class="relative">
-          <input type="text" id="bill-matching-search" oninput="renderBillChecklist()" placeholder="Search medicine by brand name, salt, or batch..." class="w-full border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
-          <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2 sm:top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        </div>
-      </div>
-
-      <div class="flex-1 overflow-y-auto p-2 sm:p-4">
-        <table class="w-full text-left text-xs sm:text-sm">
-          <thead class="bg-slate-50 text-slate-600 text-[10px] sm:text-[11px] font-bold uppercase border-b border-slate-200 sticky top-0 z-10">
-            <tr>
-              <th class="p-2 sm:p-2.5 text-center w-10 sm:w-12">Match</th>
-              <th class="p-2 sm:p-2.5">Medicine & Salt</th>
-              <th class="p-2 sm:p-2.5">Batch</th>
-              <th class="p-2 sm:p-2.5 text-center">Billed</th>
-              <th class="p-2 sm:p-2.5 text-center w-24 sm:w-28">Received</th>
-              <th class="p-2 sm:p-2.5">Discrepancy Notes</th>
-            </tr>
-          </thead>
-          <tbody id="bill-checklist-body" class="divide-y divide-slate-100">
-            <tr><td colspan="6" class="p-8 text-center text-slate-400 text-xs">No invoice uploaded. Click <b>Upload Bill</b> above to load items.</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="p-3 sm:p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
-        <span id="bill-search-count" class="text-[11px] sm:text-xs text-slate-500">0 items displayed</span>
-        <button onclick="closeBillMatchingModal()" class="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs transition">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= ATTACH BARCODE MODAL ================= -->
-  <div id="attach-barcode-modal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-    <div class="bg-white rounded-xl max-w-sm w-full p-4 sm:p-5 shadow-2xl relative space-y-3 sm:space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-        <div>
-          <h3 class="font-bold text-sm text-slate-800">Attach Barcode</h3>
-          <p id="attach-modal-med-title" class="text-xs text-slate-500 truncate max-w-[240px]"></p>
-        </div>
-        <button onclick="closeAttachBarcodeModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold leading-none">&times;</button>
-      </div>
-
-      <input type="hidden" id="attach-modal-med-id" value="" />
-
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Scan or Enter Barcode Number</label>
-          <div class="flex gap-1.5">
-            <input type="text" id="attach-modal-barcode-input" placeholder="Barcode..." class="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono focus:ring-2 focus:ring-emerald-500" />
-            <button type="button" onclick="startCameraScanner('attach_modal')" class="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border flex-shrink-0">Cam</button>
-          </div>
-        </div>
-        <button type="button" onclick="submitAttachedBarcode()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition">Save & Link Barcode</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= DETAILED MEDICINE INFO MODAL ================= -->
-  <div id="medicine-details-modal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-    <div class="bg-white rounded-xl max-w-md w-full p-4 sm:p-5 shadow-2xl relative space-y-3 sm:space-y-4 max-h-[92vh] overflow-y-auto">
-      <div class="flex justify-between items-start border-b border-slate-100 pb-2.5">
-        <div>
-          <h3 id="modal-med-name" class="font-bold text-sm sm:text-base text-slate-800"></h3>
-          <p id="modal-med-generic" class="text-[11px] sm:text-xs text-slate-500"></p>
-        </div>
-        <button onclick="closeMedicineDetailsModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold leading-none">&times;</button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-2 sm:gap-2.5 text-xs">
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Pack Of</span>
-          <span id="modal-med-pack" class="font-bold text-slate-800 truncate block"></span>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Batch Number</span>
-          <span id="modal-med-batch" class="font-mono font-bold text-slate-800 truncate block"></span>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Barcode Status</span>
-          <span id="modal-med-barcode"></span>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Purchase Invoice</span>
-          <span id="modal-med-invoice" class="font-mono font-bold text-blue-700 truncate block"></span>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Dealer / Supplier</span>
-          <span id="modal-med-dealer" class="font-bold text-slate-800 truncate block"></span>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Stock Quantity</span>
-          <span id="modal-med-qty" class="font-bold text-slate-800 truncate block"></span>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Rack Location</span>
-          <span id="modal-med-rack" class="font-bold text-slate-800 truncate block"></span>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Purchase Cost</span>
-          <span id="modal-med-cost" class="font-semibold text-slate-700 truncate block"></span>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Selling Price</span>
-          <span id="modal-med-price" class="font-bold text-emerald-700 truncate block"></span>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Expiry Date</span>
-          <div id="modal-med-expiry"></div>
-        </div>
-        <div class="p-2 sm:p-2.5 bg-slate-50 rounded-lg col-span-2">
-          <span class="text-slate-400 block text-[9px] sm:text-[10px] uppercase font-bold">Date of Purchase</span>
-          <span id="modal-med-purchased" class="font-medium text-slate-700 truncate block"></span>
-        </div>
-      </div>
-
-      <div class="flex gap-2 pt-1 sm:pt-2">
-        <button id="modal-edit-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 sm:py-2.5 rounded-lg text-xs transition">Edit / Restock</button>
-        <button onclick="closeMedicineDetailsModal()" class="px-4 py-2 sm:py-2.5 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition">Close</button>
       </div>
     </div>
   </div>
@@ -2305,7 +2148,7 @@
         
         return `
           <div 
-            onclick='selectMedicineFromSearch(${JSON.stringify(med)})' 
+            onclick="selectMedicineFromSearchById('${med._id}')" 
             class="p-2.5 hover:bg-emerald-50/70 cursor-pointer flex justify-between items-center transition ${isExpired ? 'opacity-60 bg-red-50/40' : ''}"
           >
             <div class="min-w-0 flex-1 pr-2">
@@ -2328,14 +2171,20 @@
       suggestionsBox.classList.remove('hidden');
     }
 
-    function selectMedicineFromSearch(med) {
+    function selectMedicineFromSearchById(id) {
       const suggestionsBox = document.getElementById('pos-medicine-suggestions');
       const searchInput = document.getElementById('pos-medicine-search');
 
-      suggestionsBox.classList.add('hidden');
-      searchInput.value = '';
+      if (suggestionsBox) suggestionsBox.classList.add('hidden');
+      if (searchInput) searchInput.value = '';
 
-      if (new Date(med.expiryDate) < new Date()) {
+      const med = inventory.find(m => m._id === id);
+      if (!med) {
+        alert('Medicine record could not be loaded.');
+        return;
+      }
+
+      if (med.expiryDate && new Date(med.expiryDate) < new Date()) {
         alert(`BLOCKED: ${med.name} (Batch: ${med.batchNumber}) has expired.`);
         return;
       }
@@ -2437,6 +2286,7 @@
         multiControls?.classList.add('hidden');
       }
 
+      // If already running, clean up gracefully without manually deleting DOM nodes
       if (qrEngine) {
         try {
           if (qrEngine.isScanning) await qrEngine.stop();
