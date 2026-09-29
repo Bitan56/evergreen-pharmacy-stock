@@ -183,7 +183,7 @@
           </div>
         </div>
 
-        <!-- POS Summary -->
+        <!-- POS Summary (GST Removed, 8% Default Discount) -->
         <div class="flex flex-col md:flex-row justify-between items-stretch md:items-end gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-slate-100">
           <p class="text-[10px] sm:text-[11px] text-slate-400 hidden sm:block max-w-sm">
             * Expired batches are blocked. Completed bills automatically update inventory and customer ledger records.
@@ -244,17 +244,29 @@
     <!-- ================= TAB 2: STOCK & LOOKUP ================= -->
     <section id="view-inventory" class="hidden space-y-6">
 
-      <!-- Action & Directory Filtering Bar -->
+      <!-- Action & Filtering Bar -->
       <div class="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-5 shadow-sm space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-800">Inventory Directory & Stock Management</h2>
-            <p class="text-[10px] sm:text-xs text-slate-500">Scan barcodes, search batch numbers, verify bills, and export reports</p>
+            <p class="text-[10px] sm:text-xs text-slate-500">Scan barcodes, search batch numbers, merge duplicates, and export reports</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <button type="button" onclick="openStockModal()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
               <span>Add / Restock Medicine</span>
+            </button>
+
+            <!-- Merge Duplicates Button -->
+            <button type="button" onclick="handleMergeDuplicates()" class="text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5" title="Combine duplicates sharing the same name & batch">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+              <span>Merge Duplicates</span>
+            </button>
+
+            <!-- Stocking History Button -->
+            <button type="button" onclick="openStockingHistoryModal()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Stocking History</span>
             </button>
 
             <!-- Scan Barcode into Stock Search -->
@@ -274,17 +286,14 @@
               <input type="file" id="json-upload-input" accept=".json" onchange="handleJsonStockUpload(event)" class="hidden" />
             </label>
 
-            <button onclick="downloadFilteredJson()" class="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm">
-              JSON
-            </button>
-
             <button onclick="downloadFilteredPdf()" class="inline-flex items-center gap-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-              <span>PDF (A4 Portrait)</span>
+              <span>PDF Report</span>
             </button>
           </div>
         </div>
 
+        <!-- Filter Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           <div class="relative">
             <label class="block text-[11px] font-semibold text-slate-600 mb-1">Scan Barcode or Type Batch / Name</label>
@@ -455,7 +464,6 @@
   </main>
 
   <!-- ================= FIXED BOTTOM MOBILE NAVIGATION ================= -->
-  <!-- Direct root child inside <body> -->
   <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-2 flex justify-around items-center z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
     <button id="mobile-nav-pos" onclick="switchTab('pos')" class="flex flex-col items-center justify-center text-emerald-600 font-bold text-[10px] active:scale-95 transition-transform flex-1">
       <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -480,7 +488,6 @@
   </nav>
 
   <!-- ================= CAMERA SCANNER MODAL ================= -->
-  <!-- Always available in the DOM with complete IDs to prevent null errors -->
   <div id="scanner-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
     <div class="bg-white rounded-xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 shadow-2xl relative">
       <div class="flex justify-between items-center mb-3">
@@ -492,6 +499,29 @@
       <div id="scanner-multi-controls" class="hidden mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
         <span id="scanner-count-badge" class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">0 attached</span>
         <button onclick="stopCameraScanner()" class="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Done Scanning</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= STOCKING HISTORY MODAL ================= -->
+  <div id="stocking-history-modal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-3 sm:p-5 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl relative overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div>
+          <h3 class="font-bold text-sm sm:text-lg text-slate-800">Stocking History by Date</h3>
+          <p class="text-[10px] sm:text-xs text-slate-500">View dates when batches were entered and export lists</p>
+        </div>
+        <button onclick="closeStockingHistoryModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold leading-none">&times;</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div id="stocking-history-list" class="space-y-3">
+          <div class="text-center text-slate-400 text-xs py-8">Loading history...</div>
+        </div>
+      </div>
+
+      <div class="p-3 sm:p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <button onclick="closeStockingHistoryModal()" class="px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg">Close</button>
       </div>
     </div>
   </div>
@@ -964,6 +994,223 @@
       if (doc) loadDoctorForEdit(doc);
     };
 
+    // Direct Add to POS from Stock Section
+    window.addDirectlyToBill = function(id) {
+      const med = inventory.find(m => m._id === id);
+      if (!med) return;
+
+      if (med.expiryDate && new Date(med.expiryDate) < new Date()) {
+        alert(`BLOCKED: ${med.name} (Batch: ${med.batchNumber}) has expired.`);
+        return;
+      }
+
+      if (med.quantity <= 0) {
+        alert(`${med.name} is marked as sold out.`);
+        return;
+      }
+
+      const expFormatted = med.expiryDate 
+        ? new Date(med.expiryDate).toLocaleDateString('en-GB', { month: '2-digit', year: '2-digit' }) 
+        : 'N/A';
+
+      const existing = cart.find(i => i.medicineId === med._id);
+      if (existing) {
+        if (existing.quantity + 1 > med.quantity) {
+          alert(`Stock limit reached (${med.quantity} available)`);
+        } else {
+          existing.quantity++;
+          existing.total = existing.quantity * existing.unitPrice;
+        }
+      } else {
+        cart.push({
+          medicineId: med._id,
+          name: med.name,
+          packOf: med.packOf || '',
+          batchNumber: med.batchNumber,
+          expiryDate: expFormatted,
+          unitPrice: med.price,
+          quantity: 1,
+          maxStock: med.quantity,
+          total: med.price
+        });
+      }
+
+      renderCart();
+      switchTab('pos');
+    };
+
+    // Mark Medicine Sold Out
+    window.markSoldOut = async function(id) {
+      const med = inventory.find(m => m._id === id);
+      if (!med) return;
+
+      if (!confirm(`Mark "${med.name}" (Batch ${med.batchNumber}) as SOLD OUT?`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/medicines/${id}/set-stock`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantity: 0 })
+        });
+
+        if (res.ok) {
+          med.quantity = 0;
+          renderInventory();
+          checkAlertNotifications();
+        } else {
+          alert('Could not update stock to sold out.');
+        }
+      } catch (err) {
+        alert('Server network error.');
+      }
+    };
+
+    // Merge Duplicates
+    window.handleMergeDuplicates = async function() {
+      if (!confirm('Find and merge all duplicate medicines sharing the same Name & Batch number? Their quantities will be combined into a single entry.')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/medicines/merge-duplicates`, { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          alert(data.message || 'Duplicate medicines merged successfully!');
+          await fetchInventory();
+        } else {
+          alert(data.error || 'Failed to merge duplicates.');
+        }
+      } catch (err) {
+        alert('Server network error while merging duplicates.');
+      }
+    };
+
+    // Stocking History Modal & Date Grouping
+    function openStockingHistoryModal() {
+      const modal = document.getElementById('stocking-history-modal');
+      const container = document.getElementById('stocking-history-list');
+      modal.classList.remove('hidden');
+
+      const dateMap = {};
+      inventory.forEach(item => {
+        const d = item.purchaseDate ? item.purchaseDate.split('T')[0] : (item.createdAt ? item.createdAt.split('T')[0] : 'Unknown');
+        if (!dateMap[d]) dateMap[d] = [];
+        dateMap[d].push(item);
+      });
+
+      const dates = Object.keys(dateMap).sort().reverse();
+      if (!dates.length) {
+        container.innerHTML = '<div class="text-center text-slate-400 text-xs py-8">No stocking history recorded yet.</div>';
+        return;
+      }
+
+      container.innerHTML = dates.map(dateStr => {
+        const list = dateMap[dateStr];
+        const formattedDate = dateStr !== 'Unknown' 
+          ? new Date(dateStr).toLocaleDateString('en-IN', { dateStyle: 'full' })
+          : 'Date Not Specified';
+
+        return `
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
+            <div>
+              <span class="font-bold text-xs sm:text-sm text-slate-800 block">${formattedDate}</span>
+              <span class="text-[11px] text-slate-500 font-mono">${list.length} medicine batch(es) stocked</span>
+            </div>
+            <button onclick="downloadStockingHistoryForDate('${dateStr}')" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm whitespace-nowrap">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <span>Download PDF</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function closeStockingHistoryModal() {
+      document.getElementById('stocking-history-modal').classList.add('hidden');
+    }
+
+    function downloadStockingHistoryForDate(dateStr) {
+      const items = inventory.filter(item => {
+        const d = item.purchaseDate ? item.purchaseDate.split('T')[0] : (item.createdAt ? item.createdAt.split('T')[0] : 'Unknown');
+        return d === dateStr;
+      });
+
+      if (!items.length) {
+        alert('No medicines found for this date.');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      doc.setFillColor(5, 150, 105);
+      doc.rect(0, 0, pageWidth, 5, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`STOCKING REPORT: ${dateStr}`, 24, 30);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Evergreen Pharmacy | Generated on: ' + new Date().toLocaleString('en-IN'), 24, 42);
+
+      const tableRows = items.map((it, idx) => [
+        idx + 1,
+        it.packOf ? `${it.name} (${it.packOf})` : it.name,
+        it.genericName || '-',
+        it.batchNumber,
+        isItemUnmarked(it) ? 'NO BARCODE' : it.barcode,
+        it.purchaseInvoiceNumber || '-',
+        it.dealerName || '-',
+        it.quantity,
+        `INR ${Number(it.costPrice || 0).toFixed(2)}`,
+        `INR ${Number(it.price).toFixed(2)}`,
+        it.expiryDate ? it.expiryDate.split('T')[0] : '-',
+        it.rackLocation || '-'
+      ]);
+
+      doc.autoTable({
+        startY: 52,
+        margin: { left: 18, right: 18 },
+        head: [['#', 'Medicine & Pack', 'Salt Composition', 'Batch', 'Barcode', 'Invoice #', 'Dealer', 'Qty', 'Cost', 'Sell', 'Expiry', 'Rack']],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [15, 23, 42],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 7,
+          halign: 'left',
+          cellPadding: 3
+        },
+        bodyStyles: {
+          fontSize: 7,
+          textColor: [30, 41, 59],
+          cellPadding: 3
+        },
+        columnStyles: {
+          0: { cellWidth: 18, halign: 'center' },
+          1: { cellWidth: 85, fontStyle: 'bold' },
+          2: { cellWidth: 80 },
+          3: { cellWidth: 48, font: 'courier' },
+          4: { cellWidth: 55, font: 'courier' },
+          5: { cellWidth: 48 },
+          6: { cellWidth: 58 },
+          7: { cellWidth: 26, halign: 'center', fontStyle: 'bold' },
+          8: { cellWidth: 40, halign: 'right' },
+          9: { cellWidth: 40, halign: 'right', fontStyle: 'bold' },
+          10: { cellWidth: 42, halign: 'center' },
+          11: { cellWidth: 40 }
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        }
+      });
+
+      doc.save(`Stocking_History_${dateStr}.pdf`);
+    }
+
     // Modal Helpers
     function openStockModal() {
       resetStockForm();
@@ -1099,7 +1346,8 @@
         tbody.innerHTML = filtered.map(item => {
           const isChecked = selectedInventoryIds.has(item._id);
           const packDisplay = item.packOf ? `<span class="bg-slate-100 text-slate-700 text-[10px] font-semibold px-1.5 py-0.5 rounded ml-1.5 border border-slate-200">${item.packOf}</span>` : '';
-          
+          const isSoldOut = Number(item.quantity) === 0;
+
           return `
             <tr class="hover:bg-slate-50 transition ${isChecked ? 'bg-emerald-50/40' : ''}">
               <td class="p-3 text-center">
@@ -1114,6 +1362,7 @@
                 <div class="font-bold text-slate-800 flex items-center flex-wrap">
                   <span>${item.name}</span>
                   ${packDisplay}
+                  ${isSoldOut ? '<span class="bg-rose-100 text-rose-700 text-[9px] font-bold px-1.5 py-0.2 rounded ml-1.5 border border-rose-200">SOLD OUT</span>' : ''}
                 </div>
                 <div class="text-xs text-slate-400">${item.genericName || 'No salt recorded'}</div>
               </td>
@@ -1121,7 +1370,7 @@
               <td class="p-3">${renderBarcodeStatusBadge(item)}</td>
               <td class="p-3 font-semibold ${item.quantity < 2 ? 'text-rose-600 font-black' : 'text-slate-800'}">
                 ${item.quantity} units
-                ${item.quantity < 2 ? '<span class="block text-[9px] text-rose-500 font-bold">Low Stock (&lt;2)</span>' : ''}
+                ${item.quantity < 2 && !isSoldOut ? '<span class="block text-[9px] text-rose-500 font-bold">Low Stock (&lt;2)</span>' : ''}
               </td>
               <td class="p-3">
                 <span class="text-xs text-slate-500">Cost: ₹${(item.costPrice || 0).toFixed(2)}</span>
@@ -1129,9 +1378,11 @@
               </td>
               <td class="p-3">${window.getExpiryBadge(item.expiryDate)}</td>
               <td class="p-3 text-center space-x-1 whitespace-nowrap">
+                <button onclick="addDirectlyToBill('${item._id}')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded shadow-sm">+ Bill</button>
                 <button onclick="openMedicineDetailsModalById('${item._id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded">Info</button>
                 <button onclick="loadMedicineForRestockById('${item._id}')" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded">+ Restock</button>
                 <button onclick="loadMedicineForEditById('${item._id}')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded">Edit</button>
+                <button onclick="markSoldOut('${item._id}')" class="text-xs ${isSoldOut ? 'text-slate-400 bg-slate-100' : 'text-amber-700 bg-amber-50 hover:bg-amber-100'} font-bold px-2 py-1 rounded" title="Set Stock to 0">Sold Out</button>
                 <button onclick="deleteMedicine('${item._id}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs px-1">Delete</button>
               </td>
             </tr>
@@ -1143,6 +1394,7 @@
         mobileList.innerHTML = filtered.map(item => {
           const isChecked = selectedInventoryIds.has(item._id);
           const packDisplay = item.packOf ? `<span class="bg-slate-100 text-slate-700 text-[9px] font-semibold px-1 py-0.5 rounded ml-1 border border-slate-200">${item.packOf}</span>` : '';
+          const isSoldOut = Number(item.quantity) === 0;
 
           return `
             <div class="bg-white border ${isChecked ? 'border-emerald-400 bg-emerald-50/20' : 'border-slate-200'} rounded-lg p-3 space-y-2 transition">
@@ -1158,6 +1410,7 @@
                     <h4 class="font-bold text-xs text-slate-800 flex items-center flex-wrap">
                       <span>${item.name}</span>
                       ${packDisplay}
+                      ${isSoldOut ? '<span class="bg-rose-100 text-rose-700 text-[9px] font-bold px-1 py-0.2 rounded ml-1">SOLD OUT</span>' : ''}
                     </h4>
                     <p class="text-[10px] text-slate-500">${item.genericName || 'No salt'}</p>
                     <div class="mt-1">${renderBarcodeStatusBadge(item)}</div>
@@ -1171,11 +1424,11 @@
               </div>
               <div class="flex justify-between items-center text-[11px] pt-1">
                 <span class="text-slate-500">Sell: <b class="text-emerald-700">₹${Number(item.price).toFixed(2)}</b></span>
-                <div class="space-x-1">
-                  <button onclick="openMedicineDetailsModalById('${item._id}')" class="text-slate-600 text-xs font-bold underline px-1">Info</button>
+                <div class="flex items-center gap-1">
+                  <button onclick="addDirectlyToBill('${item._id}')" class="text-white text-xs font-bold px-2 py-0.5 bg-emerald-600 rounded">+ Bill</button>
                   <button onclick="loadMedicineForRestockById('${item._id}')" class="text-emerald-700 text-xs font-bold px-2 py-0.5 bg-emerald-50 rounded">+ Add</button>
-                  <button onclick="loadMedicineForEditById('${item._id}')" class="text-blue-700 text-xs font-bold px-2 py-0.5 bg-blue-50 rounded">Edit</button>
-                  <button onclick="deleteMedicine('${item._id}')" class="text-rose-500 text-xs font-bold px-1">&times;</button>
+                  <button onclick="markSoldOut('${item._id}')" class="text-amber-800 text-[10px] font-bold px-1.5 py-0.5 bg-amber-50 rounded">Sold</button>
+                  <button onclick="openMedicineDetailsModalById('${item._id}')" class="text-slate-600 text-xs font-bold underline px-1">Info</button>
                 </div>
               </div>
             </div>
@@ -1996,7 +2249,7 @@
       document.getElementById('form-submit-mode').value = 'restock';
 
       document.getElementById('stock-modal-title').innerText = `Restock: ${med.name}`;
-      document.getElementById('stock-modal-subtitle').innerText = `Adding fresh stock to Batch [${med.batchNumber}] (Current: ${med.quantity} units)`;
+      document.getElementById('stock-modal-subtitle').innerText = `Adding fresh stock to ${med.name} (Current: ${med.quantity} units)`;
       document.getElementById('form-qty-label').innerText = 'Additional Quantity to Add *';
       document.getElementById('form-qty').value = '10';
       document.getElementById('form-submit-btn').innerText = `Add Fresh Stock to Batch (${med.batchNumber})`;
@@ -2231,8 +2484,8 @@
 
       if (finalBarcodes.length === 0 && !medicineId) {
         const cleanName = document.getElementById('form-name').value.trim().replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || 'MED';
-        const cleanBatch = document.getElementById('form-batch').value.trim();
-        finalBarcodes = [`NOCODE-${cleanName}-${cleanBatch}-${Date.now().toString().slice(-4)}`];
+        const cleanBatch = document.getElementById('form-batch').value.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'BATCH';
+        finalBarcodes = [`NOCODE-${cleanName}-${cleanBatch}`];
         itemHasBarcode = false;
       }
 
@@ -2376,10 +2629,10 @@
       if (existing) {
         if (existing.quantity + 1 > med.quantity) {
           alert(`Stock limit reached (${med.quantity} available)`);
-          return;
+        } else {
+          existing.quantity++;
+          existing.total = existing.quantity * existing.unitPrice;
         }
-        existing.quantity++;
-        existing.total = existing.quantity * existing.unitPrice;
       } else {
         cart.push({
           medicineId: med._id,
@@ -2802,10 +3055,10 @@
         if (existing) {
           if (existing.quantity + 1 > med.quantity) {
             alert(`Stock limit reached (${med.quantity} available)`);
-            return;
+          } else {
+            existing.quantity++;
+            existing.total = existing.quantity * existing.unitPrice;
           }
-          existing.quantity++;
-          existing.total = existing.quantity * existing.unitPrice;
         } else {
           cart.push({
             medicineId: med._id,

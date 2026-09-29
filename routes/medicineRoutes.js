@@ -2,8 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Medicine = require('../models/Medicine');
 
+// Helper to escape regex special characters
+function escapeRegex(text) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
 // ==========================================
-// 1. GET ALL MEDICINES (Sorted by nearest expiry)
+// 1. GET ALL MEDICINES
 // ==========================================
 router.get('/', async (req, res) => {
   try {
@@ -70,7 +75,86 @@ router.get('/scan/:barcode', async (req, res) => {
 });
 
 // ==========================================
-// 5. ADD / RESTOCK / EDIT MEDICINE (Includes packOf)
+// 5. UPDATE STOCK (MARK SOLD OUT / SET QTY)
+// ==========================================
+router.patch('/:id/set-stock', async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    const updated = await Medicine.findByIdAndUpdate(
+      req.params.id,
+      { $set: { quantity: Math.max(0, parseInt(quantity) || 0) } },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Medicine not found.' });
+    res.status(200).json({ success: true, medicine: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// 6. MERGE EXISTING DUPLICATES (Fixes OMEZ, etc.)
+// ==========================================
+router.post('/merge-duplicates', async (req, res) => {
+  try {
+    const all = await Medicine.find();
+    const grouped = {};
+
+    for (const med of all) {
+      const key = `${med.name.trim().toLowerCase()}__${med.batchNumber.trim().toLowerCase()}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(med);
+    }
+
+    let mergedGroups = 0;
+    let deletedCount = 0;
+
+    for (const key of Object.keys(grouped)) {
+      const list = grouped[key];
+      if (list.length > 1) {
+        // Sort: prioritize entry that has actual stock or real barcode
+        list.sort((a, b) => b.quantity - a.quantity);
+        const master = list[0];
+        const duplicates = list.slice(1);
+
+        let totalQty = master.quantity;
+        const deleteIds = [];
+
+        for (const dup of duplicates) {
+          totalQty += dup.quantity;
+          deleteIds.push(dup._id);
+        }
+
+        master.quantity = totalQty;
+        if (master.barcode.startsWith('NOCODE-')) {
+          const nonDummy = duplicates.find(d => !d.barcode.startsWith('NOCODE-'));
+          if (nonDummy) {
+            master.barcode = nonDummy.barcode;
+            master.hasBarcode = true;
+          }
+        }
+
+        await master.save();
+        await Medicine.deleteMany({ _id: { $in: deleteIds } });
+
+        mergedGroups++;
+        deletedCount += duplicates.length;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Cleaned up ${mergedGroups} duplicate medicine group(s) (${deletedCount} redundant slots removed).`,
+      mergedGroups,
+      deletedCount
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// 7. ADD / RESTOCK / EDIT MEDICINE
 // ==========================================
 router.post('/upsert', async (req, res) => {
   try {
@@ -91,7 +175,7 @@ router.post('/upsert', async (req, res) => {
       purchaseDate,
       expiryDate,
       rackLocation,
-      mode // 'edit' (overwrites quantity) or 'restock' (increments quantity)
+      mode // 'edit' or 'restock'
     } = req.body;
 
     if (!name || !batchNumber || costPrice === undefined || !price || !expiryDate) {
@@ -110,7 +194,7 @@ router.post('/upsert', async (req, res) => {
     const finalPurchaseDate = purchaseDate ? new Date(purchaseDate) : new Date();
     const finalExpiryDate = new Date(expiryDate);
 
-    // Case A: Direct Edit by ID
+    // 1. Direct ID Edit
     if (medicineId) {
       const updateData = {
         name: cleanName,
@@ -130,12 +214,8 @@ router.post('/upsert', async (req, res) => {
         updateData.hasBarcode = Boolean(hasBarcode);
       }
 
-      if (mode === 'edit') {
-        updateData.quantity = Number(quantity);
-      }
-
-      const updateOp = mode === 'edit'
-        ? { $set: updateData }
+      const updateOp = (mode === 'edit')
+        ? { $set: updateData, quantity: Number(quantity) }
         : { $set: updateData,$inc: { quantity: Number(quantity || 0) } };
 
       const updated = await Medicine.findByIdAndUpdate(medicineId, updateOp, {
@@ -143,23 +223,47 @@ router.post('/upsert', async (req, res) => {
         runValidators: true
       });
 
-      if (!updated) {
-        return res.status(404).json({ error: 'Medicine record not found for update.' });
+      if (updated) {
+        return res.status(200).json({ success: true, count: 1, medicine: updated });
       }
-
-      return res.status(200).json({ success: true, count: 1, medicine: updated });
     }
 
-    // Case B: Upsert by Barcodes (Single or Multi-Barcode)
+    // 2. Match existing medicine with the exact same Name + Batch Number
+    const existing = await Medicine.findOne({
+      name: { $regex: new RegExp(`^${escapeRegex(cleanName)}$`, 'i') },
+      batchNumber: { $regex: new RegExp(`^${escapeRegex(cleanBatch)}$`, 'i') }
+    });
+
+    if (existing) {
+      if (mode === 'edit') {
+        existing.quantity = Number(quantity);
+      } else {
+        existing.quantity += Number(quantity || 0);
+      }
+      existing.costPrice = Number(costPrice);
+      existing.price = Number(price);
+      existing.expiryDate = finalExpiryDate;
+      existing.purchaseDate = finalPurchaseDate;
+      if (cleanPackOf) existing.packOf = cleanPackOf;
+      if (cleanGeneric) existing.genericName = cleanGeneric;
+      if (cleanDealer) existing.dealerName = cleanDealer;
+      if (cleanInvoice) existing.purchaseInvoiceNumber = cleanInvoice;
+      if (cleanRack) existing.rackLocation = cleanRack;
+
+      await existing.save();
+      return res.status(200).json({ success: true, count: 1, medicine: existing });
+    }
+
+    // 3. New Entry - Generate consistent deterministic barcode if none provided
     let codeList = Array.isArray(barcodes) && barcodes.length > 0
       ? barcodes
       : (barcode ? [barcode] : []);
 
     let isMarkedNoBarcode = false;
-
     if (codeList.length === 0) {
       const prefix = cleanName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || 'MED';
-      codeList = [`NOCODE-${prefix}-${cleanBatch}-${Date.now().toString().slice(-4)}`];
+      const safeBatch = cleanBatch.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'BATCH';
+      codeList = [`NOCODE-${prefix}-${safeBatch}`];
       isMarkedNoBarcode = true;
     }
 
@@ -187,7 +291,7 @@ router.post('/upsert', async (req, res) => {
 });
 
 // ==========================================
-// 6. ATTACH BARCODE TO AN UNMARKED MEDICINE
+// 8. ATTACH BARCODE TO AN UNMARKED MEDICINE
 // ==========================================
 router.patch('/:id/attach-barcode', async (req, res) => {
   try {
@@ -197,7 +301,6 @@ router.patch('/:id/attach-barcode', async (req, res) => {
     }
 
     const cleanBarcode = barcode.trim();
-
     const duplicate = await Medicine.findOne({
       barcode: cleanBarcode,
       _id: { $ne: req.params.id }
@@ -211,19 +314,11 @@ router.patch('/:id/attach-barcode', async (req, res) => {
 
     const updated = await Medicine.findByIdAndUpdate(
       req.params.id,
-      {
-        $set: {
-          barcode: cleanBarcode,
-          hasBarcode: true
-        }
-      },
+      { $set: { barcode: cleanBarcode, hasBarcode: true } },
       { new: true, runValidators: true }
     );
 
-    if (!updated) {
-      return res.status(404).json({ error: 'Medicine record not found.' });
-    }
-
+    if (!updated) return res.status(404).json({ error: 'Medicine not found.' });
     res.status(200).json({ success: true, medicine: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -231,17 +326,19 @@ router.patch('/:id/attach-barcode', async (req, res) => {
 });
 
 // ==========================================
-// 7. BULK IMPORT VIA JSON FILE
+// 9. BULK UPLOAD (MERGES MATCHING BATCHES)
 // ==========================================
 router.post('/bulk-upload', async (req, res) => {
   try {
     const items = req.body;
-
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Payload must be a non-empty array of medicine objects.' });
     }
 
-    const operations = items.map(item => {
+    let modifiedCount = 0;
+    let upsertedCount = 0;
+
+    for (const item of items) {
       const cleanName = (item.name || '').trim();
       const cleanBatch = (item.batchNumber || '').trim();
       let cleanCode = (item.barcode || '').trim();
@@ -249,48 +346,60 @@ router.post('/bulk-upload', async (req, res) => {
 
       if (!cleanCode) {
         const prefix = cleanName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || 'MED';
-        cleanCode = `NOCODE-${prefix}-${cleanBatch || 'BATCH'}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const safeBatch = cleanBatch.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'BATCH';
+        cleanCode = `NOCODE-${prefix}-${safeBatch}`;
         hasCode = false;
       }
 
-      return {
-        updateOne: {
-          filter: { barcode: cleanCode },
-          update: {
-            $set: {
-              name: cleanName,
-              genericName: (item.genericName || '').trim(),
-              packOf: (item.packOf || item.pack || '').trim(),
-              batchNumber: cleanBatch,
-              dealerName: (item.dealerName || '').trim(),
-              purchaseInvoiceNumber: (item.purchaseInvoiceNumber || '').trim(),
-              costPrice: Number(item.costPrice || 0),
-              price: Number(item.price || 0),
-              purchaseDate: item.purchaseDate ? new Date(item.purchaseDate) : new Date(),
-              expiryDate: item.expiryDate ? new Date(item.expiryDate) : new Date(),
-              rackLocation: (item.rackLocation || 'General Shelf').trim(),
-              hasBarcode: hasCode
-            },
-            $inc: { quantity: Number(item.quantity || 0) }
-          },
-          upsert: true
-        }
-      };
-    });
+      // Check by Name + Batch or Barcode
+      const existing = await Medicine.findOne({
+        $or: [
+          { barcode: cleanCode },
+          {
+            name: { $regex: new RegExp(`^${escapeRegex(cleanName)}$`, 'i') },
+            batchNumber: { $regex: new RegExp(`^${escapeRegex(cleanBatch)}$`, 'i') }
+          }
+        ]
+      });
 
-    const bulkResult = await Medicine.bulkWrite(operations);
-    res.status(200).json({
-      success: true,
-      upsertedCount: bulkResult.upsertedCount,
-      modifiedCount: bulkResult.modifiedCount
-    });
+      if (existing) {
+        existing.quantity += Number(item.quantity || 0);
+        if (item.costPrice) existing.costPrice = Number(item.costPrice);
+        if (item.price) existing.price = Number(item.price);
+        if (item.expiryDate) existing.expiryDate = new Date(item.expiryDate);
+        if (item.genericName) existing.genericName = item.genericName.trim();
+        if (item.packOf || item.pack) existing.packOf = (item.packOf || item.pack).trim();
+        await existing.save();
+        modifiedCount++;
+      } else {
+        await Medicine.create({
+          name: cleanName,
+          genericName: (item.genericName || '').trim(),
+          packOf: (item.packOf || item.pack || '').trim(),
+          batchNumber: cleanBatch,
+          dealerName: (item.dealerName || '').trim(),
+          purchaseInvoiceNumber: (item.purchaseInvoiceNumber || '').trim(),
+          quantity: Number(item.quantity || 0),
+          costPrice: Number(item.costPrice || 0),
+          price: Number(item.price || 0),
+          purchaseDate: item.purchaseDate ? new Date(item.purchaseDate) : new Date(),
+          expiryDate: item.expiryDate ? new Date(item.expiryDate) : new Date(),
+          rackLocation: (item.rackLocation || 'General Shelf').trim(),
+          barcode: cleanCode,
+          hasBarcode: hasCode
+        });
+        upsertedCount++;
+      }
+    }
+
+    res.status(200).json({ success: true, upsertedCount, modifiedCount });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
 // ==========================================
-// 8. BULK DELETE MULTIPLE MEDICINES
+// 10. BULK DELETE
 // ==========================================
 router.post('/bulk-delete', async (req, res) => {
   try {
@@ -302,7 +411,7 @@ router.post('/bulk-delete', async (req, res) => {
     const result = await Medicine.deleteMany({ _id: { $in: ids } });
     res.status(200).json({
       success: true,
-      message: `Successfully deleted ${result.deletedCount} medicine(s).`,
+      message: `Deleted ${result.deletedCount} medicine(s).`,
       deletedCount: result.deletedCount
     });
   } catch (err) {
@@ -311,14 +420,12 @@ router.post('/bulk-delete', async (req, res) => {
 });
 
 // ==========================================
-// 9. DELETE SINGLE MEDICINE RECORD
+// 11. DELETE SINGLE MEDICINE
 // ==========================================
 router.delete('/:id', async (req, res) => {
   try {
     const deleted = await Medicine.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Medicine record not found.' });
-    }
+    if (!deleted) return res.status(404).json({ error: 'Medicine not found.' });
     res.status(200).json({ message: 'Medicine deleted successfully.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
