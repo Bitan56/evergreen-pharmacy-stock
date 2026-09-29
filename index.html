@@ -3265,8 +3265,8 @@
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
-      doc.text('Retail Drug License: DL-2024-WB-89210 | GSTIN: 19ABCDE1234F1Z5', 35, 58);
-      doc.text('Tagra, Ramnagar, Tarakeswar, PIN-712410 | Ph: +91 98765 43210', 35, 70);
+      doc.text('Retail Drug License: WB/HGL/BIO-NBO/R/801409 | GSTIN: PAN AQJPB7613B', 35, 58);
+      doc.text('Tagra, Ramnagar, Tarakeswar, PIN-712410 | Ph: +91 8515948611/8918656663', 35, 70);
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
@@ -3456,7 +3456,7 @@
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(71, 85, 105);
-      doc.text('Dispensing Pharmacist', sigX + 12, footerY + 28);
+      // doc.text('Dispensing Pharmacist', sigX + 12, footerY + 28);
 
       doc.save(`${billData.invoiceNumber}.pdf`);
     }
